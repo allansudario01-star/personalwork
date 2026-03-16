@@ -1,0 +1,437 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-primary: #f4f6f9;
+  --bg-card: #ffffff;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --accent: #3498db;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --border: #ddd;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-card: #2d2d2d;
+    --text-primary: #ecf0f1;
+    --text-secondary: #bdc3c7;
+    --border: #444;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.4;
+  padding-bottom: 20px;
+}
+
+header {
+  background: var(--accent);
+  color: white;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--accent);
+}
+
+.tab-content {
+  display: none;
+  padding: 15px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  width: 100%;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: var(--text-secondary);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-volume {
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  color: var(--text-primary);
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.filter-select,
+.search-input {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.pallet-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.pallet-card.agendado {
+  border-left: 8px solid var(--warning);
+  background: linear-gradient(to right, var(--bg-card), #fef9e7);
+}
+
+.pallet-card.completo {
+  opacity: 0.8;
+  border: 2px solid var(--success);
+}
+
+.pallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 10px;
+}
+
+.nf-tag {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.agendado-badge {
+  background: var(--warning);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.pallet-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.info-value {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.volume-container {
+  margin: 15px 0;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.volume-display {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.volume-max {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar {
+  height: 10px;
+  background: var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.progress-fill.complete {
+  background: var(--success);
+}
+
+.completo-alert {
+  background: var(--success);
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.card-actions button {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-edit {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-finalize {
+  background: var(--success);
+  color: white;
+}
+
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.position-btn {
+  padding: 15px 5px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-weight: bold;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.position-btn.selected {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: 15px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  padding: 15px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.agendamento-item {
+  background: var(--bg-card);
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agendamento-info {
+  font-weight: bold;
+}
+
+.delete-agendamento {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.offline {
+  background: var(--warning);
+  color: white;
+  text-align: center;
+  padding: 10px;
+  position: sticky;
+  top: 70px;
+  z-index: 99;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.volume-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) auto repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+  align-items: center;
+}
+
+#manual-volume {
+  width: 80px;
+  padding: 15px 5px;
+  text-align: center;
+  font-size: 1.2rem;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .volume-controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .position-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

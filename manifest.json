@@ -1,0 +1,23 @@
+{
+  "name": "Pallet System Logística",
+  "short_name": "PalletSys",
+  "description": "Sistema de gerenciamento de pallets para operações logísticas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -14,13 +14,29 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => {
+        console.log('Cache aberto');
+        return cache.addAll(urlsToCache).catch(err => {
+          console.log('Erro ao cachear:', err);
+        });
+      })
   );
 });
 
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
-      .then(response => response || fetch(event.request))
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).catch(() => {
+          // Se falhar, retorna uma resposta offline básica
+          if (event.request.url.includes('.html')) {
+            return caches.match('/index.html');
+          }
+          return new Response('Offline', { status: 503 });
+        });
+      })
   );
 });

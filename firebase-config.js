@@ -1,4 +1,4 @@
-// Configuração do Firebase com script tags (não module)
+// Suas configurações do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDyyEsEPJjCw3YAprH03OlWlovATy4SAFI",
   authDomain: "palletsystem-6ff16.firebaseapp.com",
@@ -8,16 +8,13 @@ const firebaseConfig = {
   appId: "1:395589767694:web:59e6797705a3e89fdca25f"
 };
 
-// Inicializar Firebase (versão compatível com script tags)
+// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
+
+// Criar conexão com o banco
 const db = firebase.firestore();
 
-// Habilitar persistência offline
-db.enablePersistence()
-  .catch((err) => {
-    if (err.code == 'failed-precondition') {
-      console.log('Persistência falhou - múltiplas abas abertas');
-    } else if (err.code == 'unimplemented') {
-      console.log('Persistência não disponível');
-    }
-  });
+// Disponibilizar pra todo mundo usar
+window.db = db;
+
+console.log('✅ Firebase conectado');

@@ -1,101 +1,60 @@
 class AgendamentoService {
-  constructor(db) {
-    this.db = db;
-    this.collection = 'agendamentos';
-    this.localAgendamentos = new Map();
-    this.listeners = [];
-    this.loadLocalData();
-    this.syncWithFirebase();
+  constructor() {
+    this.agendamentos = new Map();
+    this.loadFromStorage();
   }
 
-  loadLocalData() {
+  loadFromStorage() {
     const saved = localStorage.getItem('agendamentos');
     if (saved) {
       try {
-        const agendamentos = JSON.parse(saved);
-        agendamentos.forEach(a => this.localAgendamentos.set(a.id, a));
-      } catch (e) {
-        console.error('Erro ao carregar agendamentos', e);
-      }
+        const lista = JSON.parse(saved);
+        lista.forEach(a => this.agendamentos.set(a.id, a));
+      } catch (e) { }
     }
   }
 
-  saveLocalData() {
-    const agendamentos = Array.from(this.localAgendamentos.values());
-    localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+  saveToStorage() {
+    const lista = Array.from(this.agendamentos.values());
+    localStorage.setItem('agendamentos', JSON.stringify(lista));
   }
 
-  async createAgendamento(recebedor, hub, estado) {
-    const id = `${recebedor}-${hub}-${estado}`.replace(/\s+/g, '_');
-    const novoAgendamento = {
-      id,
-      recebedor,
-      hub,
-      estado,
-      sincronizado: false
-    };
+  async create(recebedor, hub, estado) {
+    const id = `${recebedor}-${hub}-${estado}`.replace(/\s/g, '_');
+    const novo = { id, recebedor, hub, estado };
 
-    this.localAgendamentos.set(id, novoAgendamento);
-    this.saveLocalData();
+    this.agendamentos.set(id, novo);
+    this.saveToStorage();
 
     try {
-      await this.db.collection(this.collection).doc(id).set(novoAgendamento);
-      novoAgendamento.sincronizado = true;
-      this.localAgendamentos.set(id, novoAgendamento);
-      this.saveLocalData();
-    } catch (e) {
-      console.log('Offline: agendamento salvo localmente');
-    }
+      await window.db.collection('agendamentos').doc(id).set(novo);
+    } catch (e) { }
 
-    this.notifyListeners();
-    return novoAgendamento;
+    return novo;
   }
 
-  async deleteAgendamento(id) {
-    this.localAgendamentos.delete(id);
-    this.saveLocalData();
+  async delete(id) {
+    this.agendamentos.delete(id);
+    this.saveToStorage();
 
     try {
-      await this.db.collection(this.collection).doc(id).delete();
-    } catch (e) {
-      console.log('Offline: exclusão pendente');
+      await window.db.collection('agendamentos').doc(id).delete();
+    } catch (e) { }
+  }
+
+  listar() {
+    return Array.from(this.agendamentos.values());
+  }
+
+  verificar(recebedor, hub, estado) {
+    const id = `${recebedor}-${hub}-${estado}`.replace(/\s/g, '_');
+    return this.agendamentos.has(id);
+  }
+
+  // Importar da planilha
+  async importarDaPlanilha(dados) {
+    for (const item of dados) {
+      await this.create(item.recebedor, item.hub, item.estado);
     }
-
-    this.notifyListeners();
-  }
-
-  getAgendamentos() {
-    return Array.from(this.localAgendamentos.values());
-  }
-
-  isAgendado(recebedor, hub, estado) {
-    const id = `${recebedor}-${hub}-${estado}`.replace(/\s+/g, '_');
-    return this.localAgendamentos.has(id);
-  }
-
-  async syncWithFirebase() {
-    if (!navigator.onLine) return;
-
-    try {
-      const snapshot = await this.db.collection(this.collection).get();
-      snapshot.forEach(doc => {
-        this.localAgendamentos.set(doc.id, { ...doc.data(), sincronizado: true });
-      });
-      this.saveLocalData();
-      this.notifyListeners();
-    } catch (e) {
-      console.error('Erro ao sincronizar agendamentos', e);
-    }
-  }
-
-  subscribe(listener) {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
-  }
-
-  notifyListeners() {
-    this.listeners.forEach(l => l(this.getAgendamentos()));
   }
 }

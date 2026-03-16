@@ -4,78 +4,44 @@
   box-sizing: border-box;
 }
 
-:root {
-  --bg-primary: #f4f6f9;
-  --bg-card: #ffffff;
-  --text-primary: #2c3e50;
-  --text-secondary: #7f8c8d;
-  --accent: #3498db;
-  --success: #27ae60;
-  --warning: #f39c12;
-  --danger: #e74c3c;
-  --border: #ddd;
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1a1a1a;
-    --bg-card: #2d2d2d;
-    --text-primary: #ecf0f1;
-    --text-secondary: #bdc3c7;
-    --border: #444;
-    --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-}
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.4;
-  padding-bottom: 20px;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  padding: 10px;
 }
 
 header {
-  background: var(--accent);
+  background: #3498db;
   color: white;
-  padding: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow);
-}
-
-h1 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
 }
 
 .tab-bar {
   display: flex;
   gap: 10px;
+  margin-top: 10px;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 12px;
+  padding: 15px;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-weight: bold;
   border-radius: 8px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
   cursor: pointer;
-  font-size: 1rem;
 }
 
 .tab-btn.active {
   background: white;
-  color: var(--accent);
+  color: #3498db;
 }
 
 .tab-content {
   display: none;
-  padding: 15px;
 }
 
 .tab-content.active {
@@ -83,189 +49,85 @@ h1 {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 15px 20px;
-  border-radius: 10px;
-  font-weight: bold;
-  font-size: 1.1rem;
   width: 100%;
-  cursor: pointer;
+  padding: 20px;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
   margin: 10px 0;
-}
-
-.btn-success {
-  background: var(--success);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
   cursor: pointer;
-}
-
-.btn-warning {
-  background: var(--warning);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  background: var(--text-secondary);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-volume {
-  background: var(--bg-card);
-  border: 2px solid var(--accent);
-  color: var(--text-primary);
-  padding: 15px;
-  border-radius: 8px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  min-width: 70px;
 }
 
 .filters {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
-}
-
-.filter-select,
-.search-input {
-  flex: 1;
-  padding: 15px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  font-size: 1rem;
-}
-
-.pallet-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: var(--shadow);
-  position: relative;
-  transition: transform 0.2s;
-}
-
-.pallet-card.agendado {
-  border-left: 8px solid var(--warning);
-  background: linear-gradient(to right, var(--bg-card), #fef9e7);
-}
-
-.pallet-card.completo {
-  opacity: 0.8;
-  border: 2px solid var(--success);
-}
-
-.pallet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 10px;
-}
-
-.nf-tag {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--accent);
-}
-
-.agendado-badge {
-  background: var(--warning);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.pallet-info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
   margin: 10px 0;
 }
 
-.info-item {
-  display: flex;
-  flex-direction: column;
+.filters select,
+.filters input {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
 }
 
-.info-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.pallet-card {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.info-value {
+.pallet-card.agendado {
+  border-left: 8px solid #f39c12;
+}
+
+.nf-tag {
+  font-size: 20px;
   font-weight: bold;
-  font-size: 1.1rem;
+  color: #3498db;
 }
 
-.volume-container {
-  margin: 15px 0;
-}
-
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
+.agendado-badge {
+  background: #f39c12;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
 }
 
 .volume-display {
-  font-size: 1.5rem;
+  font-size: 24px;
   font-weight: bold;
-  color: var(--accent);
-}
-
-.volume-max {
-  font-size: 1rem;
-  color: var(--text-secondary);
+  color: #3498db;
 }
 
 .progress-bar {
   height: 10px;
-  background: var(--border);
+  background: #ecf0f1;
   border-radius: 5px;
-  overflow: hidden;
   margin: 10px 0;
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--accent);
+  background: #3498db;
+  border-radius: 5px;
   transition: width 0.3s;
 }
 
-.progress-fill.complete {
-  background: var(--success);
-}
-
 .completo-alert {
-  background: var(--success);
+  background: #27ae60;
   color: white;
   padding: 8px;
   border-radius: 5px;
   text-align: center;
-  font-weight: bold;
-  margin: 10px 0;
 }
 
 .card-actions {
@@ -283,40 +145,6 @@ h1 {
   cursor: pointer;
 }
 
-.btn-edit {
-  background: var(--accent);
-  color: white;
-}
-
-.btn-finalize {
-  background: var(--success);
-  color: white;
-}
-
-.position-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin: 15px 0;
-}
-
-.position-btn {
-  padding: 15px 5px;
-  background: var(--bg-card);
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  font-weight: bold;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.position-btn.selected {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
 .modal {
   position: fixed;
   top: 0;
@@ -327,7 +155,6 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
 }
 
 .modal.hidden {
@@ -335,7 +162,7 @@ h1 {
 }
 
 .modal-content {
-  background: var(--bg-card);
+  background: white;
   padding: 20px;
   border-radius: 15px;
   width: 95%;
@@ -343,95 +170,45 @@ h1 {
   overflow-y: auto;
 }
 
-.modal-content input,
-.modal-content select {
+.modal-content input {
   width: 100%;
   padding: 15px;
-  margin: 8px 0;
-  border: 1px solid var(--border);
+  margin: 5px 0;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 16px;
 }
 
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin: 10px 0;
 }
 
-.modal-actions button {
-  flex: 1;
-  padding: 15px;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.agendamento-item {
-  background: var(--bg-card);
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.agendamento-info {
-  font-weight: bold;
-}
-
-.delete-agendamento {
-  background: var(--danger);
-  color: white;
-  border: none;
-  padding: 10px 15px;
+.position-btn {
+  padding: 15px 5px;
+  border: 1px solid #ccc;
   border-radius: 5px;
+  background: white;
   cursor: pointer;
+}
+
+.position-btn.selected {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
 }
 
 .offline {
-  background: var(--warning);
+  background: #f39c12;
   color: white;
   text-align: center;
   padding: 10px;
-  position: sticky;
-  top: 70px;
-  z-index: 99;
+  margin-bottom: 10px;
+  border-radius: 5px;
 }
 
 .hidden {
   display: none !important;
-}
-
-.volume-controls {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr) auto repeat(3, 1fr);
-  gap: 8px;
-  margin: 20px 0;
-  align-items: center;
-}
-
-#manual-volume {
-  width: 80px;
-  padding: 15px 5px;
-  text-align: center;
-  font-size: 1.2rem;
-  border: 2px solid var(--accent);
-  border-radius: 8px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-@media (max-width: 480px) {
-  .volume-controls {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .position-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }

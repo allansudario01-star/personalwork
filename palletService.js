@@ -1,145 +1,92 @@
 class PalletService {
-  constructor(db) {
-    this.db = db;
-    this.collection = 'pallets';
-    this.localPallets = new Map();
-    this.listeners = [];
+  constructor() {
+    this.pallets = new Map(); // Guarda os pallets na memória
+    this.loadFromStorage();
   }
 
-  // Carregar dados do localStorage
-  loadLocalData() {
+  // Carregar do celular
+  loadFromStorage() {
     const saved = localStorage.getItem('pallets');
     if (saved) {
       try {
-        const pallets = JSON.parse(saved);
-        pallets.forEach(p => this.localPallets.set(p.id, p));
-      } catch (e) {
-        console.error('Erro ao carregar localStorage', e);
-      }
+        const lista = JSON.parse(saved);
+        lista.forEach(p => this.pallets.set(p.id, p));
+      } catch (e) { }
     }
   }
 
-  // Salvar no localStorage
-  saveLocalData() {
-    const pallets = Array.from(this.localPallets.values());
-    localStorage.setItem('pallets', JSON.stringify(pallets));
+  // Salvar no celular
+  saveToStorage() {
+    const lista = Array.from(this.pallets.values());
+    localStorage.setItem('pallets', JSON.stringify(lista));
   }
 
-  // Criar pallet
-  async createPallet(palletData) {
+  // Criar pallet novo
+  async create(data) {
     const id = Date.now().toString();
-    const newPallet = {
+    const novo = {
       id,
-      ...palletData,
+      ...data,
       volumesAtuais: 0,
-      criadoEm: new Date().toISOString(),
-      sincronizado: false
+      criadoEm: new Date().toISOString()
     };
 
-    // Salvar local
-    this.localPallets.set(id, newPallet);
-    this.saveLocalData();
+    this.pallets.set(id, novo);
+    this.saveToStorage();
 
-    // Tentar sincronizar com Firebase
+    // Tentar salvar na nuvem
     try {
-      await this.db.collection(this.collection).doc(id).set(newPallet);
-      newPallet.sincronizado = true;
-      this.localPallets.set(id, newPallet);
-      this.saveLocalData();
+      await window.db.collection('pallets').doc(id).set(novo);
     } catch (e) {
-      console.log('Offline: pallet salvo localmente');
+      console.log('Offline: salvo só no celular');
     }
 
-    this.notifyListeners();
-    return newPallet;
+    return novo;
   }
 
   // Atualizar volumes
   async updateVolumes(id, novosVolumes) {
-    const pallet = this.localPallets.get(id);
+    const pallet = this.pallets.get(id);
     if (!pallet) return;
 
-    pallet.volumesAtuais = Math.max(0, Math.min(novosVolumes, pallet.maxVolumes));
-    this.localPallets.set(id, pallet);
-    this.saveLocalData();
+    pallet.volumesAtuais = Math.min(novosVolumes, pallet.maxVolumes);
+    if (pallet.volumesAtuais < 0) pallet.volumesAtuais = 0;
+
+    this.saveToStorage();
 
     try {
-      await this.db.collection(this.collection).doc(id).update({
+      await window.db.collection('pallets').doc(id).update({
         volumesAtuais: pallet.volumesAtuais
       });
-      pallet.sincronizado = true;
-    } catch (e) {
-      pallet.sincronizado = false;
-      console.log('Offline: atualização salva localmente');
-    }
-
-    this.saveLocalData();
-    this.notifyListeners();
+    } catch (e) { }
   }
 
-  // Finalizar pallet (remover da lista ativa)
-  async finalizarPallet(id) {
-    this.localPallets.delete(id);
-    this.saveLocalData();
+  // Finalizar (remover)
+  async finalizar(id) {
+    this.pallets.delete(id);
+    this.saveToStorage();
 
     try {
-      await this.db.collection(this.collection).doc(id).delete();
-    } catch (e) {
-      console.log('Offline: exclusão pendente');
-    }
-
-    this.notifyListeners();
+      await window.db.collection('pallets').doc(id).delete();
+    } catch (e) { }
   }
 
-  // Buscar todos os pallets ativos
-  getPallets(filtroPosicao = '', searchNF = '') {
-    let pallets = Array.from(this.localPallets.values());
+  // Listar todos
+  listar(filtroPosicao = '', buscaNF = '') {
+    let lista = Array.from(this.pallets.values());
 
     if (filtroPosicao) {
-      pallets = pallets.filter(p => p.palletPosicao?.startsWith(filtroPosicao));
+      lista = lista.filter(p => p.palletPosicao?.startsWith(filtroPosicao));
     }
 
-    if (searchNF) {
-      pallets = pallets.filter(p => p.notaFiscal?.includes(searchNF));
+    if (buscaNF) {
+      lista = lista.filter(p => p.notaFiscal?.includes(buscaNF));
     }
 
-    // Ordenar: incompletos primeiro por posição, depois completos
-    const incompletos = pallets
-      .filter(p => p.volumesAtuais < p.maxVolumes)
-      .sort((a, b) => (a.palletPosicao || '').localeCompare(b.palletPosicao || ''));
-
-    const completos = pallets
-      .filter(p => p.volumesAtuais >= p.maxVolumes)
-      .sort((a, b) => (a.palletPosicao || '').localeCompare(b.palletPosicao || ''));
+    // Separar incompletos e completos
+    const incompletos = lista.filter(p => p.volumesAtuais < p.maxVolumes);
+    const completos = lista.filter(p => p.volumesAtuais >= p.maxVolumes);
 
     return [...incompletos, ...completos];
-  }
-
-  // Sincronizar com Firebase
-  async syncWithFirebase() {
-    if (!navigator.onLine) return;
-
-    try {
-      const snapshot = await this.db.collection(this.collection).get();
-      snapshot.forEach(doc => {
-        this.localPallets.set(doc.id, { ...doc.data(), sincronizado: true });
-      });
-      this.saveLocalData();
-      this.notifyListeners();
-    } catch (e) {
-      console.error('Erro ao sincronizar', e);
-    }
-  }
-
-  // Observer pattern
-  subscribe(listener) {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
-  }
-
-  notifyListeners() {
-    this.listeners.forEach(l => l(this.getPallets()));
   }
 }

@@ -4,14 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Pallet System - Logística</title>
+    <title>Pallet System</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 
 <body>
-    <div id="offline-banner" class="offline hidden">⚠️ Modo offline - Dados salvos localmente</div>
+    <div id="offline-banner" class="offline hidden">⚠️ Modo offline</div>
 
     <header>
         <h1>📦 Pallet System</h1>
@@ -24,46 +26,39 @@
     <main>
         <!-- ABA PALLETS -->
         <section id="pallets-tab" class="tab-content active">
-            <div class="pallets-header">
-                <div class="filters">
-                    <select id="position-filter" class="filter-select">
-                        <option value="">Todas as posições</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
-                        <option value="G">G</option>
-                    </select>
-                    <input type="text" id="search-nf" placeholder="🔍 Buscar NF" class="search-input">
-                </div>
-                <button id="create-pallet-btn" class="btn-primary btn-large">+ NOVO PALLET</button>
+            <div class="filters">
+                <select id="position-filter">
+                    <option value="">Todas posições</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="G">G</option>
+                </select>
+                <input type="text" id="search-nf" placeholder="🔍 Buscar NF">
             </div>
 
-            <div id="pallets-list" class="pallets-list">
-                <!-- Pallets serão renderizados aqui -->
-            </div>
+            <button id="create-pallet-btn" class="btn-primary">+ NOVO PALLET</button>
+
+            <div id="pallets-list"></div>
         </section>
 
         <!-- ABA AGENDAMENTOS -->
         <section id="agendamentos-tab" class="tab-content">
-            <div class="agendamentos-header">
-                <h2>Agendamentos</h2>
-                <button id="create-agendamento-btn" class="btn-primary">+ NOVO</button>
-            </div>
+            <h2>Agendamentos</h2>
+            <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
 
-            <form id="agendamento-form" class="agendamento-form hidden">
+            <form id="agendamento-form" class="hidden">
                 <input type="text" id="ag-recebedor" placeholder="Recebedor" required>
                 <input type="text" id="ag-hub" placeholder="Hub" required>
                 <input type="text" id="ag-estado" placeholder="UF" maxlength="2" required>
-                <button type="submit" class="btn-success">Salvar</button>
-                <button type="button" id="cancel-agendamento" class="btn-secondary">Cancelar</button>
+                <button type="submit">Salvar</button>
+                <button type="button" id="cancel-agendamento">Cancelar</button>
             </form>
 
-            <div id="agendamentos-list" class="agendamentos-list">
-                <!-- Agendamentos serão renderizados aqui -->
-            </div>
+            <div id="agendamentos-list"></div>
         </section>
     </main>
 
@@ -79,26 +74,22 @@
                 <input type="text" id="cidade" placeholder="Cidade" required>
                 <input type="number" id="maxVolumes" placeholder="Volumes máx" min="1" required>
 
-                <label>Posição do Pallet:</label>
-                <div class="position-grid" id="position-grid">
-                    <!-- Gerado via JS -->
-                </div>
+                <label>Posição:</label>
+                <div class="position-grid" id="position-grid"></div>
                 <input type="hidden" id="palletPosicao" required>
 
-                <div class="modal-actions">
-                    <button type="submit" class="btn-success">Criar</button>
-                    <button type="button" id="close-modal" class="btn-secondary">Cancelar</button>
-                </div>
+                <button type="submit">Criar</button>
+                <button type="button" id="close-modal">Cancelar</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Editar Volumes -->
+    <!-- Modal Volumes -->
     <div id="volume-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Ajustar Volumes</h3>
             <div id="volume-info"></div>
-            <div class="volume-controls">
+            <div>
                 <button class="btn-volume" data-value="-1">-1</button>
                 <button class="btn-volume" data-value="-5">-5</button>
                 <button class="btn-volume" data-value="-10">-10</button>
@@ -107,14 +98,13 @@
                 <button class="btn-volume" data-value="5">+5</button>
                 <button class="btn-volume" data-value="10">+10</button>
             </div>
-            <div class="modal-actions">
-                <button id="save-volume" class="btn-success">Salvar</button>
-                <button id="finalize-pallet" class="btn-warning">Finalizar Pallet</button>
-                <button id="close-volume-modal" class="btn-secondary">Fechar</button>
-            </div>
+            <button id="save-volume">Salvar</button>
+            <button id="finalize-pallet">Finalizar Pallet</button>
+            <button id="close-volume-modal">Fechar</button>
         </div>
     </div>
 
+    <!-- Seus scripts -->
     <script src="firebase-config.js"></script>
     <script src="palletService.js"></script>
     <script src="agendamentoService.js"></script>

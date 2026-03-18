@@ -93,15 +93,7 @@ class PalletService {
     if (!pallet) return;
 
     pallet.finalizadoEm = new Date().toISOString();
-
-    if (bipado === 'nao_precisa') {
-      pallet.bipado = null;
-      pallet.statusBipagem = 'nao_precisa';
-    } else {
-      pallet.bipado = bipado;
-      pallet.statusBipagem = bipado ? 'bipado' : 'pendente';
-    }
-
+    pallet.bipado = bipado;
     pallet.status = 'finalizado';
 
     this.finalizados.set(id, pallet);

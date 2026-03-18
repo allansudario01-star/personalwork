@@ -120,7 +120,7 @@ class AgendamentoService {
 
     console.log('❌ NENHUM AGENDAMENTO ENCONTRADO');
     return false;
-  } 
+  }
 
   async importarDoExcel(conteudoCSV) {
     const linhas = conteudoCSV.split('\n');

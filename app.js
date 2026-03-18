@@ -206,17 +206,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('save-volume').addEventListener('click', async () => {
-      if (!window.palletAtual) {
-        console.log('Nenhum pallet selecionado');
-        return;
-      }
+      if (!window.palletAtual) return;
 
       const novos = parseInt(document.getElementById('manual-volume').value) || 0;
-      await window.palletService.updateVolumes(window.palletAtual.id, novos);
+      await window.palletService.updateVolumes(window.palletAtual, novos);
 
       document.getElementById('volume-modal').classList.add('hidden');
-      window.palletAtual = null;
-
       renderizarPallets();
     });
 
@@ -229,14 +224,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('close-volume-modal').addEventListener('click', () => {
       document.getElementById('volume-modal').classList.add('hidden');
-      window.palletAtual = null;
     });
 
     document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
       if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual.id, true);
+        await window.palletService.finalizar(window.palletAtual, true);
         document.getElementById('finalizar-modal').classList.add('hidden');
-        window.palletAtual = null;
         renderizarPallets();
         renderizarFinalizados();
       }
@@ -244,23 +237,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
       if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual.id, false);
+        await window.palletService.finalizar(window.palletAtual, false);
         document.getElementById('finalizar-modal').classList.add('hidden');
-        window.palletAtual = null;
-        renderizarPallets();
-        renderizarFinalizados();
-
-        setTimeout(() => {
-          alert('⚠️ ATENÇÃO: Este pallet foi marcado como NÃO BIPADO!\nLembre-se de bipar os volumes antes do carregamento.');
-        }, 300);
-      }
-    });
-
-    document.getElementById('confirm-finalizar-nao-precisa').addEventListener('click', async () => {
-      if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual.id, 'nao_precisa');
-        document.getElementById('finalizar-modal').classList.add('hidden');
-        window.palletAtual = null;
         renderizarPallets();
         renderizarFinalizados();
       }
@@ -268,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('cancel-finalizar').addEventListener('click', () => {
       document.getElementById('finalizar-modal').classList.add('hidden');
-
     });
   }
 
@@ -283,14 +260,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.abrirModalVolumes = function (id) {
-    console.log('Abrindo modal para pallet:', id);
     const p = window.palletService.pallets.get(id);
-    if (!p) {
-      console.log('Pallet não encontrado:', id);
-      return;
-    }
+    if (!p) return;
 
-    window.palletAtual = p;
+    window.palletAtual = id;
     document.getElementById('volume-info').innerHTML = `
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <strong style="font-size: 18px;">NF ${p.notaFiscal}</strong><br>
@@ -302,18 +275,6 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     document.getElementById('manual-volume').value = p.volumesAtuais;
     document.getElementById('volume-modal').classList.remove('hidden');
-  };
-
-  window.finalizarPallet = function (id) {
-    console.log('Finalizar pallet:', id);
-    const p = window.palletService.pallets.get(id);
-    if (!p) {
-      console.log('Pallet não encontrado:', id);
-      return;
-    }
-
-    window.palletAtual = p; // Guarda o objeto inteiro
-    document.getElementById('finalizar-modal').classList.remove('hidden');
   };
 
   window.finalizarPallet = function (id) {
@@ -362,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
     pallets.forEach(p => {
       const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
 
+      // Log detalhado do pallet
       console.log('Verificando pallet:', {
         nf: p.notaFiscal,
         recebedor: p.recebedor,
@@ -467,37 +429,29 @@ document.addEventListener('DOMContentLoaded', function () {
     finalizados.forEach(p => {
       const dataFinalizacao = new Date(p.finalizadoEm).toLocaleDateString('pt-BR');
 
-      // Determinar o badge de status de bipagem
-      let badgeBipagem = '';
-      if (p.statusBipagem === 'nao_precisa') {
-        badgeBipagem = '<span class="finalizado-badge nao-precisa">⚪ NÃO PRECISA BIPAR</span>';
-      } else if (p.bipado) {
-        badgeBipagem = '<span class="finalizado-badge bipado">✅ BIPADO</span>';
-      } else {
-        badgeBipagem = '<span class="finalizado-badge nao-bipado">❌ PENDENTE</span>';
-      }
-
       html += `
-            <div class="finalizado-card">
-                <div class="finalizado-header">
-                    <span>NF ${p.notaFiscal}</span>
-                    ${badgeBipagem}
-                </div>
+                <div class="finalizado-card">
+                    <div class="finalizado-header">
+                        <span>NF ${p.notaFiscal}</span>
+                        <span class="finalizado-badge ${p.bipado ? 'bipado' : 'nao-bipado'}">
+                            ${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}
+                        </span>
+                    </div>
 
-                <div class="finalizado-info">
-                    <div><small>Recebedor</small><br>${p.recebedor}</div>
-                    <div><small>Hub/UF</small><br>${p.hub} - ${p.estado}</div>
-                    <div><small>Volumes</small><br>${p.volumesAtuais}/${p.maxVolumes}</div>
-                    <div><small>Finalizado</small><br>${dataFinalizacao}</div>
-                </div>
+                    <div class="finalizado-info">
+                        <div><small>Recebedor</small><br>${p.recebedor}</div>
+                        <div><small>Hub/UF</small><br>${p.hub} - ${p.estado}</div>
+                        <div><small>Volumes</small><br>${p.volumesAtuais}/${p.maxVolumes}</div>
+                        <div><small>Finalizado</small><br>${dataFinalizacao}</div>
+                    </div>
 
-                <div style="margin-top: 15px; display: flex; gap: 10px;">
-                    <button onclick="reimprimirEtiqueta('${p.id}')" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
-                        🖨️ Reimprimir
-                    </button>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button onclick="reimprimirEtiqueta('${p.id}')" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
+                            🖨️ Reimprimir
+                        </button>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
     });
 
     lista.innerHTML = html;

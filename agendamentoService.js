@@ -9,16 +9,28 @@ class AgendamentoService {
     if (saved) {
       try {
         const lista = JSON.parse(saved);
+        console.log('Agendamentos carregados:', lista);
+
         lista.forEach(a => {
-          if (!a.tipo) a.tipo = 'PADRÃO';
+
+          a.uf = (a.uf || '').toUpperCase().trim();
+          a.hub = (a.hub || '').toUpperCase().trim();
+          a.recebedor = (a.recebedor || '').toUpperCase().trim();
+          a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
+
+          a.id = `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
 
           a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
+
           this.agendamentos.set(a.id, a);
         });
       } catch (e) {
         console.log('Erro ao carregar agendamentos:', e);
       }
     }
+
+    console.log('Map de agendamentos:', this.agendamentos);
+
   }
 
   saveToStorage() {
@@ -32,6 +44,8 @@ class AgendamentoService {
     hub = hub.toUpperCase().trim();
     recebedor = recebedor.toUpperCase().trim();
     tipo = tipo.toUpperCase().trim();
+
+    console.log('Criando agendamento:', { uf, hub, recebedor, tipo });
 
     const id = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
     const novo = {
@@ -70,29 +84,36 @@ class AgendamentoService {
   limparTodos() {
     this.agendamentos.clear();
     this.saveToStorage();
-
-    try {
-
-    } catch (e) { }
   }
 
   listar() {
     return Array.from(this.agendamentos.values());
   }
 
-  verificar(uf, hub, recebedor) {
+  verificar(recebedor, hub, estado) {
 
-    uf = uf.toUpperCase().trim();
-    hub = hub.toUpperCase().trim();
-    recebedor = recebedor.toUpperCase().trim();
+    recebedor = (recebedor || '').toUpperCase().trim();
+    hub = (hub || '').toUpperCase().trim();
+    estado = (estado || '').toUpperCase().trim();
+
+    console.log('🔍 Verificando agendamento para:', { recebedor, hub, estado });
+
+    console.log('Agendamentos disponíveis:', Array.from(this.agendamentos.values()));
 
     for (let agendamento of this.agendamentos.values()) {
-      if (agendamento.uf === uf &&
+      console.log('Comparando com agendamento:', agendamento);
+
+      if (agendamento.recebedor === recebedor &&
         agendamento.hub === hub &&
-        agendamento.recebedor === recebedor) {
+        agendamento.uf === estado) {
+        console.log('✅ AGENDAMENTO ENCONTRADO!');
+
         return true;
       }
     }
+
+    console.log('❌ NENHUM AGENDAMENTO ENCONTRADO');
+
     return false;
   }
 

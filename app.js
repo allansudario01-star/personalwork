@@ -320,52 +320,67 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
     pallets.forEach(p => {
       const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
-      const agendado = window.agendamentoService.verificar(p.recebedor, p.hub, p.estado);
+
+      // DEBUG: Verificar no console
+      console.log('Verificando pallet:', {
+        recebedor: p.recebedor,
+        hub: p.hub,
+        estado: p.estado
+      });
+
+      const agendado = window.agendamentoService.verificar(
+        p.recebedor,
+        p.hub,
+        p.estado
+      );
+
+      console.log('Resultado agendado:', agendado);
+
       const completo = p.volumesAtuais >= p.maxVolumes;
 
       html += `
-                <div class="pallet-card ${agendado ? 'agendado' : ''}">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span class="nf-tag">NF ${p.notaFiscal}</span>
-                        ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
+            <div class="pallet-card ${agendado ? 'agendado' : ''}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="nf-tag">NF ${p.notaFiscal}</span>
+                    ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <small>Recebedor</small>
+                        <strong>${p.recebedor}</strong>
                     </div>
-
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <small>Recebedor</small>
-                            <strong>${p.recebedor}</strong>
-                        </div>
-                        <div class="info-item">
-                            <small>Hub/UF</small>
-                            <strong>${p.hub} - ${p.estado}</strong>
-                        </div>
-                        <div class="info-item">
-                            <small>Cidade</small>
-                            <strong>${p.cidade}</strong>
-                        </div>
-                        <div class="info-item">
-                            <small>Posição</small>
-                            <strong>${p.palletPosicao}</strong>
-                        </div>
+                    <div class="info-item">
+                        <small>Hub/UF</small>
+                        <strong>${p.hub} - ${p.estado}</strong>
                     </div>
-
-                    <div>
-                        <span class="volume-display">${p.volumesAtuais}</span>
-                        <span style="color: #7f8c8d;">/ ${p.maxVolumes}</span>
-
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${progresso}%"></div>
-                        </div>
-
-                        ${completo ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
+                    <div class="info-item">
+                        <small>Cidade</small>
+                        <strong>${p.cidade}</strong>
                     </div>
-
-                    <div class="card-actions">
-                        <button onclick="abrirModalVolumes('${p.id}')">Ajustar</button>
-                        <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
+                    <div class="info-item">
+                        <small>Posição</small>
+                        <strong>${p.palletPosicao}</strong>
                     </div>
                 </div>
-            `;
+
+                <div>
+                    <span class="volume-display">${p.volumesAtuais}</span>
+                    <span style="color: #7f8c8d;">/ ${p.maxVolumes}</span>
+
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progresso}%"></div>
+                    </div>
+
+                    ${completo ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
+                </div>
+
+                <div class="card-actions">
+                    <button onclick="abrirModalVolumes('${p.id}')">Ajustar</button>
+                    <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
+                </div>
+            </div>
+        `;
     });
 
     lista.innerHTML = html;

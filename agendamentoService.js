@@ -91,31 +91,36 @@ class AgendamentoService {
   }
 
   verificar(recebedor, hub, estado) {
-
     recebedor = (recebedor || '').toUpperCase().trim();
     hub = (hub || '').toUpperCase().trim();
     estado = (estado || '').toUpperCase().trim();
 
-    console.log('🔍 Verificando agendamento para:', { recebedor, hub, estado });
+    console.log('🔍 VERIFICAÇÃO DETALHADA:');
+    console.log('Buscando por:', { recebedor, hub, estado });
+    console.log('Total agendamentos:', this.agendamentos.size);
 
-    console.log('Agendamentos disponíveis:', Array.from(this.agendamentos.values()));
-
-    for (let agendamento of this.agendamentos.values()) {
-      console.log('Comparando com agendamento:', agendamento);
+    for (let [id, agendamento] of this.agendamentos.entries()) {
+      console.log('Comparando com agendamento:', {
+        id,
+        agendamento_recebedor: agendamento.recebedor,
+        agendamento_hub: agendamento.hub,
+        agendamento_uf: agendamento.uf,
+        recebedor_igual: agendamento.recebedor === recebedor,
+        hub_igual: agendamento.hub === hub,
+        uf_igual: agendamento.uf === estado
+      });
 
       if (agendamento.recebedor === recebedor &&
         agendamento.hub === hub &&
         agendamento.uf === estado) {
-        console.log('✅ AGENDAMENTO ENCONTRADO!');
-
+        console.log('✅ AGENDAMENTO ENCONTRADO!', agendamento);
         return true;
       }
     }
 
     console.log('❌ NENHUM AGENDAMENTO ENCONTRADO');
-
     return false;
-  }
+  } 
 
   async importarDoExcel(conteudoCSV) {
     const linhas = conteudoCSV.split('\n');

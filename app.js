@@ -312,6 +312,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const pallets = window.palletService.listar(filtro, busca);
     const lista = document.getElementById('pallets-list');
 
+    console.log('📋 RENDERIZANDO PALLETS:', pallets.length);
+
     if (pallets.length === 0) {
       lista.innerHTML = '<div style="text-align: center; padding: 50px; color: #7f8c8d;">📦 Nenhum pallet ativo</div>';
       return;
@@ -321,11 +323,12 @@ document.addEventListener('DOMContentLoaded', function () {
     pallets.forEach(p => {
       const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
 
-      // DEBUG: Verificar no console
       console.log('Verificando pallet:', {
+        nf: p.notaFiscal,
         recebedor: p.recebedor,
         hub: p.hub,
-        estado: p.estado
+        estado: p.estado,
+        posicao: p.palletPosicao
       });
 
       const agendado = window.agendamentoService.verificar(
@@ -334,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
         p.estado
       );
 
-      console.log('Resultado agendado:', agendado);
+      console.log('Resultado agendado:', agendado ? 'SIM' : 'NÃO');
 
       const completo = p.volumesAtuais >= p.maxVolumes;
 

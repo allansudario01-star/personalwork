@@ -96,7 +96,6 @@ class PalletService {
 
     if (bipado === 'nao_precisa') {
       pallet.bipado = null;
-
       pallet.statusBipagem = 'nao_precisa';
     } else {
       pallet.bipado = bipado;

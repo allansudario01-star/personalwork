@@ -206,12 +206,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('save-volume').addEventListener('click', async () => {
-      if (!window.palletAtual) return;
+      if (!window.palletAtual) {
+        console.log('Nenhum pallet selecionado');
+        return;
+      }
 
       const novos = parseInt(document.getElementById('manual-volume').value) || 0;
-      await window.palletService.updateVolumes(window.palletAtual, novos);
+      await window.palletService.updateVolumes(window.palletAtual.id, novos);
 
       document.getElementById('volume-modal').classList.add('hidden');
+      window.palletAtual = null;
+
       renderizarPallets();
     });
 
@@ -224,12 +229,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('close-volume-modal').addEventListener('click', () => {
       document.getElementById('volume-modal').classList.add('hidden');
+      window.palletAtual = null;
     });
 
-    ddocument.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
+    document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
       if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual, true);
+        await window.palletService.finalizar(window.palletAtual.id, true);
         document.getElementById('finalizar-modal').classList.add('hidden');
+        window.palletAtual = null;
         renderizarPallets();
         renderizarFinalizados();
       }
@@ -237,8 +244,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
       if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual, false);
+        await window.palletService.finalizar(window.palletAtual.id, false);
         document.getElementById('finalizar-modal').classList.add('hidden');
+        window.palletAtual = null;
         renderizarPallets();
         renderizarFinalizados();
 
@@ -250,9 +258,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('confirm-finalizar-nao-precisa').addEventListener('click', async () => {
       if (window.palletAtual) {
-
-        await window.palletService.finalizar(window.palletAtual, 'nao_precisa');
+        await window.palletService.finalizar(window.palletAtual.id, 'nao_precisa');
         document.getElementById('finalizar-modal').classList.add('hidden');
+        window.palletAtual = null;
         renderizarPallets();
         renderizarFinalizados();
       }
@@ -260,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('cancel-finalizar').addEventListener('click', () => {
       document.getElementById('finalizar-modal').classList.add('hidden');
+
     });
   }
 
@@ -274,10 +283,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.abrirModalVolumes = function (id) {
+    console.log('Abrindo modal para pallet:', id);
     const p = window.palletService.pallets.get(id);
-    if (!p) return;
+    if (!p) {
+      console.log('Pallet não encontrado:', id);
+      return;
+    }
 
-    window.palletAtual = id;
+    window.palletAtual = p;
     document.getElementById('volume-info').innerHTML = `
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <strong style="font-size: 18px;">NF ${p.notaFiscal}</strong><br>
@@ -289,6 +302,18 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     document.getElementById('manual-volume').value = p.volumesAtuais;
     document.getElementById('volume-modal').classList.remove('hidden');
+  };
+
+  window.finalizarPallet = function (id) {
+    console.log('Finalizar pallet:', id);
+    const p = window.palletService.pallets.get(id);
+    if (!p) {
+      console.log('Pallet não encontrado:', id);
+      return;
+    }
+
+    window.palletAtual = p; // Guarda o objeto inteiro
+    document.getElementById('finalizar-modal').classList.remove('hidden');
   };
 
   window.finalizarPallet = function (id) {

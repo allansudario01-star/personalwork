@@ -49,14 +49,15 @@
             <h2>Agendamentos</h2>
             <div class="agendamento-actions">
                 <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
-                <button id="import-excel-btn" class="btn-secondary">📥 IMPORTAR EXCEL</button>
+                <button id="import-excel-btn" class="btn-secondary">📥 IMPORTAR</button>
+                <button id="clear-agendamentos-btn" class="btn-danger">🗑️ LIMPAR TUDO</button>
             </div>
 
             <form id="agendamento-form" class="hidden form-compact">
                 <input type="text" id="ag-uf" placeholder="UF" maxlength="2" required>
                 <input type="text" id="ag-hub" placeholder="Hub" required>
                 <input type="text" id="ag-recebedor" placeholder="Recebedor" required>
-                <input type="text" id="ag-tipo" placeholder="Tipo" required>
+                <input type="text" id="ag-tipo" placeholder="Tipo" value="PADRÃO">
                 <div class="form-actions">
                     <button type="submit">Salvar</button>
                     <button type="button" id="cancel-agendamento">Cancelar</button>

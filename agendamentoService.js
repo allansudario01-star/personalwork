@@ -10,8 +10,9 @@ class AgendamentoService {
       try {
         const lista = JSON.parse(saved);
         lista.forEach(a => {
-
           if (!a.tipo) a.tipo = 'PADRÃO';
+
+          a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
           this.agendamentos.set(a.id, a);
         });
       } catch (e) {
@@ -66,6 +67,15 @@ class AgendamentoService {
     }
   }
 
+  limparTodos() {
+    this.agendamentos.clear();
+    this.saveToStorage();
+
+    try {
+
+    } catch (e) { }
+  }
+
   listar() {
     return Array.from(this.agendamentos.values());
   }
@@ -90,15 +100,20 @@ class AgendamentoService {
     const linhas = conteudoCSV.split('\n');
     const resultados = [];
 
-    for (let i = 1; i < linhas.length; i++) {
-
+    for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i].trim();
-      if (!linha) continue;
+      if (!linha || linha.startsWith('UF') || linha.startsWith('uf')) continue;
 
-      const [uf, hub, recebedor, tipo] = linha.split(',').map(item => item.trim());
+      const partes = linha.split(',').map(item => item.trim());
+      let uf, hub, recebedor, tipo = 'PADRÃO';
 
-      if (uf && hub && recebedor) {
-        const agendamento = await this.create(uf, hub, recebedor, tipo || 'PADRÃO');
+      if (partes.length >= 3) {
+        uf = partes[0];
+        hub = partes[1];
+        recebedor = partes[2];
+        if (partes.length >= 4) tipo = partes[3];
+
+        const agendamento = await this.create(uf, hub, recebedor, tipo);
         resultados.push(agendamento);
       }
     }
@@ -115,14 +130,5 @@ class AgendamentoService {
         item.tipo || item.TIPO || 'PADRÃO'
       );
     }
-  }
-
-  limparTodos() {
-    this.agendamentos.clear();
-    this.saveToStorage();
-
-    try {
-
-    } catch (e) { }
   }
 }

@@ -171,32 +171,28 @@ h1 {
   background: linear-gradient(to right, #fff9e6, white);
 }
 
-.pallet-card.nao-bipado {
-  border-left: 8px solid #e74c3c;
-}
-
 .nf-tag {
   font-size: 20px;
   font-weight: 700;
   color: #2c3e50;
 }
 
-.agendado-badge,
-.nao-bipado-badge {
+.agendado-badge {
+  background: #f39c12;
+  color: white;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.agendado-badge {
-  background: #f39c12;
+.nao-agendado-badge {
+  background: #7f8c8d;
   color: white;
-}
-
-.nao-bipado-badge {
-  background: #e74c3c;
-  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .info-grid {
@@ -483,12 +479,20 @@ h1 {
 }
 
 .finalizado-badge {
-  background: #27ae60;
-  color: white;
   padding: 4px 8px;
   border-radius: 5px;
   font-size: 12px;
   display: inline-block;
+}
+
+.finalizado-badge.bipado {
+  background: #27ae60;
+  color: white;
+}
+
+.finalizado-badge.nao-bipado {
+  background: #e74c3c;
+  color: white;
 }
 
 .hidden {
@@ -505,15 +509,24 @@ h1 {
   font-weight: 600;
 }
 
-.pdf-preview {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 15px;
-  margin: 20px 0;
-  border: 2px dashed #3498db;
-}
+@media print {
+  body * {
+    visibility: hidden;
+  }
 
-.pdf-preview h4 {
-  color: #2c3e50;
-  margin-bottom: 15px;
+  .etiqueta-a4,
+  .etiqueta-a4 * {
+    visibility: visible;
+  }
+
+  .etiqueta-a4 {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 2cm;
+    background: white;
+  }
 }

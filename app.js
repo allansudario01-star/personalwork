@@ -101,10 +101,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const dados = {
         notaFiscal: document.getElementById('nf').value,
-        recebedor: document.getElementById('recebedor').value,
-        hub: document.getElementById('hub').value,
-        estado: document.getElementById('estado').value.toUpperCase(),
-        cidade: document.getElementById('cidade').value,
+        recebedor: document.getElementById('recebedor').value.toUpperCase().trim(),
+        hub: document.getElementById('hub').value.toUpperCase().trim(),
+        estado: document.getElementById('estado').value.toUpperCase().trim(),
+        cidade: document.getElementById('cidade').value.toUpperCase().trim(),
         maxVolumes: parseInt(document.getElementById('maxVolumes').value),
         palletPosicao: posicao
       };
@@ -121,7 +121,9 @@ document.addEventListener('DOMContentLoaded', function () {
         dados.estado
       );
 
-      window.palletService.imprimirEtiqueta(pallet, isAgendado);
+      setTimeout(() => {
+        window.palletService.imprimirEtiqueta(pallet, isAgendado);
+      }, 100);
     });
 
     document.getElementById('position-filter').addEventListener('change', renderizarPallets);
@@ -159,6 +161,13 @@ document.addEventListener('DOMContentLoaded', function () {
       e.target.reset();
       document.getElementById('agendamento-form').classList.add('hidden');
       renderizarAgendamentos();
+    });
+
+    document.getElementById('clear-agendamentos-btn').addEventListener('click', () => {
+      if (confirm('⚠️ Limpar TODOS os agendamentos?')) {
+        window.agendamentoService.limparTodos();
+        renderizarAgendamentos();
+      }
     });
 
     document.getElementById('import-excel-btn').addEventListener('click', importarExcel);
@@ -222,18 +231,16 @@ document.addEventListener('DOMContentLoaded', function () {
         await window.palletService.finalizar(window.palletAtual, true);
         document.getElementById('finalizar-modal').classList.add('hidden');
         renderizarPallets();
+        renderizarFinalizados();
       }
     });
 
     document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
       if (window.palletAtual) {
-        const pallet = window.palletService.pallets.get(window.palletAtual);
-        if (pallet) {
-          pallet.naoBipado = true;
-          window.palletService.saveToStorage();
-        }
+        await window.palletService.finalizar(window.palletAtual, false);
         document.getElementById('finalizar-modal').classList.add('hidden');
         renderizarPallets();
+        renderizarFinalizados();
       }
     });
 
@@ -315,14 +322,12 @@ document.addEventListener('DOMContentLoaded', function () {
       const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
       const agendado = window.agendamentoService.verificar(p.recebedor, p.hub, p.estado);
       const completo = p.volumesAtuais >= p.maxVolumes;
-      const naoBipado = p.naoBipado;
 
       html += `
-                <div class="pallet-card ${agendado ? 'agendado' : ''} ${naoBipado ? 'nao-bipado' : ''}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="pallet-card ${agendado ? 'agendado' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span class="nf-tag">NF ${p.notaFiscal}</span>
-                        ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : ''}
-                        ${naoBipado ? '<span class="nao-bipado-badge">⚠️ NÃO BIPADO</span>' : ''}
+                        ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
                     </div>
 
                     <div class="info-grid">
@@ -409,7 +414,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="finalizado-card">
                     <div class="finalizado-header">
                         <span>NF ${p.notaFiscal}</span>
-                        <span class="finalizado-badge">${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}</span>
+                        <span class="finalizado-badge ${p.bipado ? 'bipado' : 'nao-bipado'}">
+                            ${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}
+                        </span>
                     </div>
 
                     <div class="finalizado-info">

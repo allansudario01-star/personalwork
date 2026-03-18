@@ -3,11 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Pallet System</title>
     <link rel="stylesheet" href="style.css">
-
-    <!-- Firebase SDK - PRIMEIRO sempre -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
@@ -20,11 +19,12 @@
         <div class="tab-bar">
             <button class="tab-btn active" data-tab="pallets">PALLETS</button>
             <button class="tab-btn" data-tab="agendamentos">AGENDAMENTOS</button>
+            <button class="tab-btn" data-tab="finalizados">FINALIZADOS</button>
         </div>
     </header>
 
     <main>
-        <!-- ABA PALLETS -->
+
         <section id="pallets-tab" class="tab-content active">
             <div class="filters">
                 <select id="position-filter">
@@ -45,24 +45,37 @@
             <div id="pallets-list"></div>
         </section>
 
-        <!-- ABA AGENDAMENTOS -->
         <section id="agendamentos-tab" class="tab-content">
             <h2>Agendamentos</h2>
-            <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
+            <div class="agendamento-actions">
+                <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
+                <button id="import-excel-btn" class="btn-secondary">📥 IMPORTAR EXCEL</button>
+            </div>
 
-            <form id="agendamento-form" class="hidden">
-                <input type="text" id="ag-recebedor" placeholder="Recebedor" required>
+            <form id="agendamento-form" class="hidden form-compact">
+                <input type="text" id="ag-uf" placeholder="UF" maxlength="2" required>
                 <input type="text" id="ag-hub" placeholder="Hub" required>
-                <input type="text" id="ag-estado" placeholder="UF" maxlength="2" required>
-                <button type="submit">Salvar</button>
-                <button type="button" id="cancel-agendamento">Cancelar</button>
+                <input type="text" id="ag-recebedor" placeholder="Recebedor" required>
+                <input type="text" id="ag-tipo" placeholder="Tipo" required>
+                <div class="form-actions">
+                    <button type="submit">Salvar</button>
+                    <button type="button" id="cancel-agendamento">Cancelar</button>
+                </div>
             </form>
 
             <div id="agendamentos-list"></div>
         </section>
+
+        <section id="finalizados-tab" class="tab-content">
+            <h2>Pallets Finalizados</h2>
+            <div class="filters">
+                <input type="text" id="search-finalizados" placeholder="🔍 Buscar NF ou Recebedor">
+                <button id="clear-history" class="btn-secondary">Limpar Histórico</button>
+            </div>
+            <div id="finalizados-list"></div>
+        </section>
     </main>
 
-    <!-- Modal Criar Pallet -->
     <div id="pallet-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Novo Pallet</h3>
@@ -78,33 +91,49 @@
                 <div class="position-grid" id="position-grid"></div>
                 <input type="hidden" id="palletPosicao" required>
 
-                <button type="submit">Criar</button>
-                <button type="button" id="close-modal">Cancelar</button>
+                <div class="form-actions">
+                    <button type="submit">Criar e Imprimir</button>
+                    <button type="button" id="close-modal">Cancelar</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Volumes -->
     <div id="volume-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Ajustar Volumes</h3>
             <div id="volume-info"></div>
-            <div>
-                <button class="btn-volume" data-value="-1">-1</button>
-                <button class="btn-volume" data-value="-5">-5</button>
+
+            <div class="volume-controls">
                 <button class="btn-volume" data-value="-10">-10</button>
+                <button class="btn-volume" data-value="-5">-5</button>
+                <button class="btn-volume" data-value="-1">-1</button>
                 <input type="number" id="manual-volume" min="0" placeholder="0">
                 <button class="btn-volume" data-value="1">+1</button>
                 <button class="btn-volume" data-value="5">+5</button>
                 <button class="btn-volume" data-value="10">+10</button>
             </div>
-            <button id="save-volume">Salvar</button>
-            <button id="finalize-pallet">Finalizar Pallet</button>
-            <button id="close-volume-modal">Fechar</button>
+
+            <div class="volume-actions">
+                <button id="save-volume" class="btn-primary">Salvar</button>
+                <button id="finalize-pallet" class="btn-warning">Finalizar Pallet</button>
+                <button id="close-volume-modal" class="btn-secondary">Fechar</button>
+            </div>
         </div>
     </div>
 
-    <!-- Seus scripts - usando caminho RELATIVO -->
+    <div id="finalizar-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Finalizar Pallet</h3>
+            <p>Todos os volumes foram bipados?</p>
+            <div class="finalizar-actions">
+                <button id="confirm-finalizar-sim" class="btn-success">SIM ✅</button>
+                <button id="confirm-finalizar-nao" class="btn-danger">NÃO ❌</button>
+                <button id="cancel-finalizar" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="firebase-config.js"></script>
     <script src="palletService.js"></script>
     <script src="agendamentoService.js"></script>

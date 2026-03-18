@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('volume-modal').classList.add('hidden');
     });
 
-    document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
+    ddocument.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
       if (window.palletAtual) {
         await window.palletService.finalizar(window.palletAtual, true);
         document.getElementById('finalizar-modal').classList.add('hidden');
@@ -238,6 +238,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
       if (window.palletAtual) {
         await window.palletService.finalizar(window.palletAtual, false);
+        document.getElementById('finalizar-modal').classList.add('hidden');
+        renderizarPallets();
+        renderizarFinalizados();
+
+        setTimeout(() => {
+          alert('⚠️ ATENÇÃO: Este pallet foi marcado como NÃO BIPADO!\nLembre-se de bipar os volumes antes do carregamento.');
+        }, 300);
+      }
+    });
+
+    document.getElementById('confirm-finalizar-nao-precisa').addEventListener('click', async () => {
+      if (window.palletAtual) {
+
+        await window.palletService.finalizar(window.palletAtual, 'nao_precisa');
         document.getElementById('finalizar-modal').classList.add('hidden');
         renderizarPallets();
         renderizarFinalizados();
@@ -428,29 +442,37 @@ document.addEventListener('DOMContentLoaded', function () {
     finalizados.forEach(p => {
       const dataFinalizacao = new Date(p.finalizadoEm).toLocaleDateString('pt-BR');
 
+      // Determinar o badge de status de bipagem
+      let badgeBipagem = '';
+      if (p.statusBipagem === 'nao_precisa') {
+        badgeBipagem = '<span class="finalizado-badge nao-precisa">⚪ NÃO PRECISA BIPAR</span>';
+      } else if (p.bipado) {
+        badgeBipagem = '<span class="finalizado-badge bipado">✅ BIPADO</span>';
+      } else {
+        badgeBipagem = '<span class="finalizado-badge nao-bipado">❌ PENDENTE</span>';
+      }
+
       html += `
-                <div class="finalizado-card">
-                    <div class="finalizado-header">
-                        <span>NF ${p.notaFiscal}</span>
-                        <span class="finalizado-badge ${p.bipado ? 'bipado' : 'nao-bipado'}">
-                            ${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}
-                        </span>
-                    </div>
-
-                    <div class="finalizado-info">
-                        <div><small>Recebedor</small><br>${p.recebedor}</div>
-                        <div><small>Hub/UF</small><br>${p.hub} - ${p.estado}</div>
-                        <div><small>Volumes</small><br>${p.volumesAtuais}/${p.maxVolumes}</div>
-                        <div><small>Finalizado</small><br>${dataFinalizacao}</div>
-                    </div>
-
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button onclick="reimprimirEtiqueta('${p.id}')" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
-                            🖨️ Reimprimir
-                        </button>
-                    </div>
+            <div class="finalizado-card">
+                <div class="finalizado-header">
+                    <span>NF ${p.notaFiscal}</span>
+                    ${badgeBipagem}
                 </div>
-            `;
+
+                <div class="finalizado-info">
+                    <div><small>Recebedor</small><br>${p.recebedor}</div>
+                    <div><small>Hub/UF</small><br>${p.hub} - ${p.estado}</div>
+                    <div><small>Volumes</small><br>${p.volumesAtuais}/${p.maxVolumes}</div>
+                    <div><small>Finalizado</small><br>${dataFinalizacao}</div>
+                </div>
+
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button onclick="reimprimirEtiqueta('${p.id}')" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
+                        🖨️ Reimprimir
+                    </button>
+                </div>
+            </div>
+        `;
     });
 
     lista.innerHTML = html;

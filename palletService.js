@@ -173,16 +173,15 @@ class PalletService {
             margin: 10px auto;
             font-size: 12px;
         ">
-            <!-- HEADER -->
+
             <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 8px;">
                 <h2 style="margin: 0; color: #333; font-size: 20px;">PALLET</h2>
                 <p style="color: #666; margin: 3px 0; font-size: 10px;">${dataSeparacao} ${horaAtual}</p>
             </div>
 
-            <!-- DADOS PRINCIPAIS -->
             <div style="margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span><strong>Unidade:</strong> ${pallet.hub}</span>
+                    <span><strong>Unidade (Hub):</strong> ${pallet.hub}</span>
                     <span><strong>NF:</strong> ${pallet.notaFiscal}</span>
                 </div>
 
@@ -196,7 +195,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VOLUMES E PALLETS -->
             <div style="
                 display: flex;
                 justify-content: space-between;
@@ -207,15 +205,14 @@ class PalletService {
             ">
                 <div style="text-align: center; flex: 1;">
                     <strong style="font-size: 14px;">VOLUMES</strong><br>
-                    <span style="font-size: 18px; font-weight: bold;">___ / ${pallet.maxVolumes}</span>
+                    <span style="font-size: 18px; font-weight: bold;">_____ / ${pallet.maxVolumes}</span>
                 </div>
                 <div style="text-align: center; flex: 1;">
                     <strong style="font-size: 14px;">PALLETS</strong><br>
-                    <span style="font-size: 18px; font-weight: bold;">___ / _</span>
+                    <span style="font-size: 18px; font-weight: bold;">_____ / ___</span>
                 </div>
             </div>
 
-            <!-- SERVIÇO (CHECKBOXES) -->
             <div style="margin-bottom: 15px; border: 1px solid #ccc; padding: 8px; border-radius: 5px;">
                 <strong style="display: block; margin-bottom: 8px;">SERVIÇO:</strong>
 
@@ -235,13 +232,11 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- TIPO DE VEÍCULO -->
             <div style="margin-bottom: 15px;">
                 <strong>TIPO DE VEÍCULO:</strong>
                 <div style="border-bottom: 1px solid #333; margin-top: 5px; height: 20px;"></div>
             </div>
 
-            <!-- DATAS -->
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                 <div style="flex: 1;">
                     <strong>DATA SEPARAÇÃO:</strong><br>
@@ -253,13 +248,12 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VIAGEM -->
             <div style="margin-bottom: 15px; border-top: 2px solid #333; padding-top: 8px;">
                 <strong style="font-size: 14px;">VIAGEM</strong>
 
                 <div style="display: flex; justify-content: space-between; margin: 8px 0;">
-                    <span><strong>Motorista previsto:</strong> _______________</span>
-                    <span><strong>Liberado por:</strong> _______________</span>
+                    <span><strong>Motorista previsto:</strong> _________________</span>
+                    <span><strong>Liberado por:</strong> _________________</span>
                 </div>
 
                 <div style="display: flex; justify-content: space-between;">
@@ -268,13 +262,11 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VINCULAR NOTA FISCAL -->
             <div style="margin-bottom: 15px;">
                 <strong>VINCULAR NOTA FISCAL:</strong>
                 <div style="border-bottom: 1px solid #333; margin-top: 5px; height: 20px;"></div>
             </div>
 
-            <!-- BOLSÃO / AGENDAMENTO -->
             <div style="margin-bottom: 15px;">
                 <div style="display: flex; gap: 20px; margin-bottom: 10px;">
                     <div>
@@ -288,23 +280,9 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- OBSERVAÇÃO -->
             <div>
                 <strong>OBSERVAÇÃO:</strong>
                 <div style="border: 1px solid #333; margin-top: 5px; min-height: 40px; padding: 5px;"></div>
-            </div>
-
-            <!-- STATUS AGENDAMENTO (RODAPÉ) -->
-            <div style="
-                background: ${isAgendado ? '#f39c12' : '#3498db'};
-                color: white;
-                padding: 5px;
-                text-align: center;
-                border-radius: 5px;
-                margin-top: 15px;
-                font-size: 11px;
-            ">
-                ${isAgendado ? '⚠️ AGENDADO' : '📦 NÃO AGENDADO'}
             </div>
         </div>
     `;

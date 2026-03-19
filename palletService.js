@@ -154,54 +154,150 @@ class PalletService {
   }
 
   gerarEtiquetaHTML(pallet, isAgendado) {
-    const data = new Date().toLocaleDateString('pt-BR');
-    const hora = new Date().toLocaleTimeString('pt-BR');
+    const dataAtual = new Date();
+    const dataSeparacao = dataAtual.toLocaleDateString('pt-BR');
+    const horaAtual = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // Formato de data em branco para preenchimento (__/__/____)
+    const dataEmBranco = '__/__/____';
+    const horaEmBranco = '__:__';
 
     return `
-            <div style="
-                font-family: Arial, sans-serif;
-                width: 300px;
-                padding: 20px;
-                border: 2px solid #333;
-                border-radius: 10px;
-                background: white;
-                margin: 10px auto;
-            ">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0; color: #333;">PALLET</h2>
-                    <p style="color: #666; margin: 5px 0;">${data} ${hora}</p>
+        <div style="
+            font-family: Arial, sans-serif;
+            width: 320px;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: white;
+            margin: 10px auto;
+            font-size: 12px;
+        ">
+
+            <div style="text-align: center; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 8px;">
+                <h2 style="margin: 0; color: #333; font-size: 20px;">PALLET</h2>
+                <p style="color: #666; margin: 3px 0; font-size: 10px;">${dataSeparacao} ${horaAtual}</p>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span><strong>Unidade:</strong> ${pallet.hub}</span>
+                    <span><strong>NF:</strong> ${pallet.notaFiscal}</span>
                 </div>
 
-                <div style="margin: 15px 0;">
-                    <p><strong>NF:</strong> ${pallet.notaFiscal}</p>
-                    <p><strong>Recebedor:</strong> ${pallet.recebedor}</p>
-                    <p><strong>Hub/UF:</strong> ${pallet.hub} - ${pallet.estado}</p>
-                    <p><strong>Cidade:</strong> ${pallet.cidade}</p>
+                <div style="margin-bottom: 5px;">
+                    <strong>Recebedor:</strong> ${pallet.recebedor}
                 </div>
 
-                <div style="
-                    background: ${isAgendado ? '#f39c12' : '#3498db'};
-                    color: white;
-                    padding: 10px;
-                    text-align: center;
-                    border-radius: 5px;
-                    margin: 15px 0;
-                ">
-                    ${isAgendado ? '⚠️ AGENDADO' : '📦 NÃO AGENDADO'}
-                </div>
-
-                <div style="
-                    border-top: 2px dashed #333;
-                    padding-top: 15px;
-                    margin-top: 15px;
-                ">
-                    <p style="text-align: center; font-size: 18px; font-weight: bold;">
-                        ${pallet.volumesAtuais} / ${pallet.maxVolumes} Volumes
-                    </p>
-                    <p style="text-align: center; font-size: 24px;">📦</p>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>UF:</strong> ${pallet.estado}</span>
+                    <span><strong>Cidade:</strong> ${pallet.cidade}</span>
                 </div>
             </div>
-        `;
+
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+                padding: 8px;
+                background: #f5f5f5;
+                border-radius: 5px;
+            ">
+                <div style="text-align: center; flex: 1;">
+                    <strong style="font-size: 14px;">VOLUMES</strong><br>
+                    <span style="font-size: 18px; font-weight: bold;">___ / ${pallet.maxVolumes}</span>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <strong style="font-size: 14px;">PALLETS</strong><br>
+                    <span style="font-size: 18px; font-weight: bold;">___ / _</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px; border: 1px solid #ccc; padding: 8px; border-radius: 5px;">
+                <strong style="display: block; margin-bottom: 8px;">SERVIÇO:</strong>
+
+                <div style="margin-bottom: 5px;">
+                    <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
+                    <span style="vertical-align: middle;">Entrega direta para o recebedor</span>
+                </div>
+
+                <div style="margin-bottom: 5px;">
+                    <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
+                    <span style="vertical-align: middle;">Envio para a unidade ou ponto de encontro</span>
+                </div>
+
+                <div>
+                    <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
+                    <span style="vertical-align: middle;">Interhub / Entrega para o recebedor</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>TIPO DE VEÍCULO:</strong>
+                <div style="border-bottom: 1px solid #333; margin-top: 5px; height: 20px;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <strong>DATA SEPARAÇÃO:</strong><br>
+                    <span>${dataSeparacao}</span>
+                </div>
+                <div style="flex: 1;">
+                    <strong>DATA PREV. EMBARQUE:</strong><br>
+                    <span>${dataEmBranco}</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px; border-top: 2px solid #333; padding-top: 8px;">
+                <strong style="font-size: 14px;">VIAGEM</strong>
+
+                <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                    <span><strong>Motorista previsto:</strong> _______________</span>
+                    <span><strong>Liberado por:</strong> _______________</span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Data realizada entrega:</strong> ${dataEmBranco}</span>
+                    <span><strong>Hora:</strong> ${horaEmBranco}</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>VINCULAR NOTA FISCAL:</strong>
+                <div style="border-bottom: 1px solid #333; margin-top: 5px; height: 20px;"></div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                    <div>
+                        <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; ${isAgendado ? 'background: #333;' : ''}"></span>
+                        <span style="vertical-align: middle;"><strong>AGENDAMENTO</strong></span>
+                    </div>
+                    <div>
+                        <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; ${!isAgendado ? 'background: #333;' : ''}"></span>
+                        <span style="vertical-align: middle;"><strong>BOLSÃO</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <strong>OBSERVAÇÃO:</strong>
+                <div style="border: 1px solid #333; margin-top: 5px; min-height: 40px; padding: 5px;"></div>
+            </div>
+
+            <div style="
+                background: ${isAgendado ? '#f39c12' : '#3498db'};
+                color: white;
+                padding: 5px;
+                text-align: center;
+                border-radius: 5px;
+                margin-top: 15px;
+                font-size: 11px;
+            ">
+                ${isAgendado ? '⚠️ AGENDADO' : '📦 NÃO AGENDADO'}
+            </div>
+        </div>
+    `;
   }
 
   imprimirEtiqueta(pallet, isAgendado) {

@@ -175,13 +175,12 @@ class PalletService {
             font-size: 14px;
             page-break-inside: avoid;
         ">
-            <!-- CABEÇALHO COMPACTO -->
+
             <div style="text-align: center; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px;">
                 <h1 style="margin: 0; font-size: 28px;">PALLET</h1>
                 <p style="color: #666; margin: 2px 0; font-size: 12px;">${dataSeparacao} ${horaAtual}</p>
             </div>
 
-            <!-- DADOS PRINCIPAIS EM 2 COLUNAS -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                 <div>
                     <div><strong style="font-size: 12px;">UNIDADE:</strong> <span style="font-size: 16px; font-weight: bold;">${pallet.hub}</span></div>
@@ -193,7 +192,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VOLUMES E PALLETS - LADO A LADO -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                 <div style="text-align: center; background: #e8f4f8; padding: 8px; border-radius: 8px;">
                     <div style="font-size: 12px; font-weight: bold;">VOLUMES</div>
@@ -205,7 +203,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- SERVIÇO COMPACTO -->
             <div style="margin-bottom: 8px; border: 1px solid #333; padding: 8px; border-radius: 5px;">
                 <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px;">SERVIÇO:</div>
                 <div style="font-size: 11px;">
@@ -215,7 +212,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- TIPO VEÍCULO E DATAS -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                 <div>
                     <div style="font-weight: bold; font-size: 12px;">TIPO VEÍCULO:</div>
@@ -233,7 +229,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VIAGEM COMPACTA -->
             <div style="margin-bottom: 8px; border-top: 2px solid #333; padding-top: 5px;">
                 <div style="font-weight: bold; font-size: 14px;">VIAGEM</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 5px 0;">
@@ -246,7 +241,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- VINCULAR NF E CHECKBOXES -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                 <div>
                     <div style="font-weight: bold; font-size: 12px;">VINCULAR NF:</div>
@@ -262,7 +256,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- OBSERVAÇÃO -->
             <div>
                 <div style="font-weight: bold; font-size: 12px;">OBS:</div>
                 <div style="border: 1px solid #333; min-height: 35px; border-radius: 4px;"></div>

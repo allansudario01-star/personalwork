@@ -529,4 +529,16 @@ h1 {
     padding: 2cm;
     background: white;
   }
+
+  #qr-preview {
+    animation: fadeIn 0.3s;
+  }
+
+  #qr-preview.hidden {
+    display: none;
+  }
+
+  #qr-preview img {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 }

@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
   configurarBotoes();
   configurarGridPosicoes();
   configurarModals();
-  configurarUploadQRCode();
 
   renderizarPallets();
   renderizarAgendamentos();
@@ -51,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarInterface() {
+
     const metaViewport = document.querySelector('meta[name=viewport]');
     metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover';
 
@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarBotoes() {
+
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
       document.getElementById('pallet-form').reset();
       document.getElementById('pallet-modal').classList.remove('hidden');
@@ -195,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarModals() {
+
     document.querySelectorAll('.btn-volume').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const valor = parseInt(e.target.dataset.value);
@@ -245,94 +247,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('cancel-finalizar').addEventListener('click', () => {
       document.getElementById('finalizar-modal').classList.add('hidden');
     });
-  }
-
-  function configurarUploadQRCode() {
-    const uploadBtn = document.getElementById('upload-qrcode-btn');
-    const qrcodeModal = document.getElementById('qrcode-modal');
-    const closeQRCodeModal = document.getElementById('close-qrcode-modal');
-    const saveQRCode = document.getElementById('save-qrcode');
-    const removeQRCode = document.getElementById('remove-qrcode');
-    const qrcodeFile = document.getElementById('qrcode-file');
-    const qrcodePreview = document.getElementById('qrcode-preview');
-    const noQRCodeMessage = document.getElementById('no-qrcode-message');
-    const qrcodeInfo = document.getElementById('qrcode-info');
-
-    carregarQRCodeSalvo();
-
-    uploadBtn.addEventListener('click', () => {
-      qrcodeModal.classList.remove('hidden');
-    });
-
-    closeQRCodeModal.addEventListener('click', () => {
-      qrcodeModal.classList.add('hidden');
-    });
-
-    qrcodeFile.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        if (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg') {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            qrcodePreview.src = event.target.result;
-            qrcodePreview.style.display = 'block';
-            noQRCodeMessage.style.display = 'none';
-            qrcodeInfo.innerHTML = `QR Code carregado: ${file.name}<br>Tamanho: ${(file.size / 1024).toFixed(2)} KB`;
-          };
-          reader.readAsDataURL(file);
-        } else {
-          alert('❌ Por favor, selecione um arquivo PNG ou JPEG');
-          qrcodeFile.value = '';
-        }
-      }
-    });
-
-    saveQRCode.addEventListener('click', () => {
-      if (qrcodeFile.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          localStorage.setItem('qrcodeImage', event.target.result);
-          qrcodeModal.classList.add('hidden');
-          alert('✅ QR Code salvo com sucesso!');
-          carregarQRCodeSalvo();
-        };
-        reader.readAsDataURL(qrcodeFile.files[0]);
-      } else if (qrcodePreview.src && qrcodePreview.src !== '' && qrcodePreview.style.display === 'block') {
-        qrcodeModal.classList.add('hidden');
-        alert('✅ QR Code mantido!');
-      } else {
-        alert('⚠️ Selecione uma imagem do QR Code primeiro');
-      }
-    });
-
-    removeQRCode.addEventListener('click', () => {
-      if (confirm('⚠️ Remover o QR Code atual?')) {
-        localStorage.removeItem('qrcodeImage');
-        qrcodeModal.classList.add('hidden');
-        alert('✅ QR Code removido!');
-        carregarQRCodeSalvo();
-      }
-    });
-
-    function carregarQRCodeSalvo() {
-      const qrcodeSalvo = localStorage.getItem('qrcodeImage');
-      if (qrcodeSalvo) {
-        window.qrcodeBase64 = qrcodeSalvo;
-        if (qrcodePreview && noQRCodeMessage) {
-          qrcodePreview.src = qrcodeSalvo;
-          qrcodePreview.style.display = 'block';
-          noQRCodeMessage.style.display = 'none';
-          qrcodeInfo.innerHTML = '✅ QR Code carregado com sucesso!';
-        }
-      } else {
-        window.qrcodeBase64 = null;
-        if (qrcodePreview && noQRCodeMessage) {
-          qrcodePreview.style.display = 'none';
-          noQRCodeMessage.style.display = 'block';
-          qrcodeInfo.innerHTML = 'Nenhum QR Code configurado.';
-        }
-      }
-    }
   }
 
   function configurarMonitorConexao() {
@@ -409,11 +323,22 @@ document.addEventListener('DOMContentLoaded', function () {
     pallets.forEach(p => {
       const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
 
+      // Log detalhado do pallet
+      console.log('Verificando pallet:', {
+        nf: p.notaFiscal,
+        recebedor: p.recebedor,
+        hub: p.hub,
+        estado: p.estado,
+        posicao: p.palletPosicao
+      });
+
       const agendado = window.agendamentoService.verificar(
         p.recebedor,
         p.hub,
         p.estado
       );
+
+      console.log('Resultado agendado:', agendado ? 'SIM' : 'NÃO');
 
       const completo = p.volumesAtuais >= p.maxVolumes;
 
@@ -533,6 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   async function importarExcel() {
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv, .txt, .xlsx';

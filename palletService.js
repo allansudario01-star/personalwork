@@ -6,6 +6,7 @@ class PalletService {
     }
 
     loadFromStorage() {
+
         const saved = localStorage.getItem('pallets');
         if (saved) {
             try {
@@ -146,7 +147,9 @@ class PalletService {
     limparHistorico() {
         this.finalizados.clear();
         this.saveFinalizadosToStorage();
+
         try {
+
         } catch (e) { }
     }
 
@@ -157,16 +160,6 @@ class PalletService {
 
         const dataEmBranco = '__/__/____';
         const horaEmBranco = '__:__';
-
-        // Verificar se existe um QR Code salvo
-        const qrcodeImage = window.qrcodeBase64 || null;
-
-        // Gerar HTML do QR Code se existir
-        const qrcodeHTML = qrcodeImage ? `
-        <div style="text-align: center; margin-bottom: 15px; padding: 10px; background: white; border-radius: 10px;">
-            <img src="${qrcodeImage}" style="max-width: 180px; max-height: 180px; object-fit: contain; margin: 0 auto;">
-        </div>
-    ` : '';
 
         return `
         <div style="
@@ -181,9 +174,7 @@ class PalletService {
             box-sizing: border-box;
             font-size: 14px;
             page-break-inside: avoid;
-            position: relative;
         ">
-            ${qrcodeHTML}
 
             <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 8px;">
                 <h1 style="margin: 0; font-size: 32px;">PALLET</h1>

@@ -50,6 +50,7 @@
             <div class="agendamento-actions">
                 <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
                 <button id="import-excel-btn" class="btn-secondary">📥 IMPORTAR</button>
+                <button id="upload-qrcode-btn" class="btn-secondary">📱 QR CODE</button>
                 <button id="clear-agendamentos-btn" class="btn-danger">🗑️ LIMPAR TUDO</button>
             </div>
 
@@ -77,6 +78,7 @@
         </section>
     </main>
 
+    <!-- Modal Novo Pallet -->
     <div id="pallet-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Novo Pallet</h3>
@@ -100,6 +102,7 @@
         </div>
     </div>
 
+    <!-- Modal Ajustar Volumes -->
     <div id="volume-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Ajustar Volumes</h3>
@@ -123,6 +126,7 @@
         </div>
     </div>
 
+    <!-- Modal Finalizar -->
     <div id="finalizar-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Finalizar Pallet</h3>
@@ -135,12 +139,36 @@
         </div>
     </div>
 
+    <!-- Modal Upload QR Code -->
+    <div id="qrcode-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Importar QR Code</h3>
+            <div style="margin: 20px 0;">
+                <div id="qrcode-preview-area" style="text-align: center; margin-bottom: 20px;">
+                    <img id="qrcode-preview"
+                        style="max-width: 200px; max-height: 200px; display: none; margin: 10px auto; border: 2px solid #ddd; border-radius: 10px; padding: 10px; background: white;">
+                    <div id="no-qrcode-message"
+                        style="color: #7f8c8d; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        📱 Nenhum QR Code importado
+                    </div>
+                </div>
+
+                <input type="file" id="qrcode-file" accept="image/png, image/jpeg, image/jpg"
+                    style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
+                <div id="qrcode-info" style="font-size: 12px; color: #666; margin: 10px 0;"></div>
+            </div>
+            <div class="form-actions">
+                <button id="save-qrcode" class="btn-primary">💾 Salvar QR Code</button>
+                <button id="remove-qrcode" class="btn-danger">🗑️ Remover QR Code</button>
+                <button id="close-qrcode-modal" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="firebase-config.js"></script>
     <script src="palletService.js"></script>
     <script src="agendamentoService.js"></script>
-    <script src="imageManager.js"></script>
     <script src="app.js"></script>
-
 </body>
 
 </html>

@@ -530,15 +530,42 @@ h1 {
     background: white;
   }
 
-  #qr-preview {
-    animation: fadeIn 0.3s;
+
+  #qrcode-preview {
+    transition: all 0.3s ease;
+    border: 2px solid #ddd;
+    padding: 5px;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
 
-  #qr-preview.hidden {
-    display: none;
+  #qrcode-preview:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
 
-  #qr-preview img {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  #upload-qrcode-btn {
+    background: #9b59b6;
+    box-shadow: 0 4px 0 #8e44ad;
   }
+
+  #upload-qrcode-btn:active {
+    transform: translateY(4px);
+    opacity: 0.9;
+  }
+
+  @media print {
+    img[src*="data:image"] {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    div img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+  }
+
 }

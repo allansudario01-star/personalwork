@@ -2,6 +2,45 @@ class AgendamentoService {
   constructor() {
     this.agendamentos = new Map();
     this.loadFromStorage();
+    this.setupRealtimeListener();
+  }
+
+  setupRealtimeListener() {
+    if (window.db) {
+      window.db.collection('agendamentos').onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const a = change.doc.data();
+            this.processarAgendamento(a);
+          }
+          if (change.type === 'modified') {
+            const a = change.doc.data();
+            this.agendamentos.set(a.id, a);
+            this.saveToStorage();
+          }
+          if (change.type === 'removed') {
+            this.agendamentos.delete(change.doc.id);
+            this.saveToStorage();
+          }
+        });
+
+        if (window.renderizarAgendamentos) window.renderizarAgendamentos();
+        if (window.renderizarPallets) window.renderizarPallets();
+      });
+    }
+  }
+
+  processarAgendamento(a) {
+    a.uf = (a.uf || '').toUpperCase().trim();
+    a.hub = (a.hub || '').toUpperCase().trim();
+    a.recebedor = (a.recebedor || '').toUpperCase().trim();
+    a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
+
+    a.id = `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
+    a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
+
+    this.agendamentos.set(a.id, a);
+    this.saveToStorage();
   }
 
   loadFromStorage() {
@@ -9,28 +48,13 @@ class AgendamentoService {
     if (saved) {
       try {
         const lista = JSON.parse(saved);
-        console.log('Agendamentos carregados:', lista);
-
         lista.forEach(a => {
-
-          a.uf = (a.uf || '').toUpperCase().trim();
-          a.hub = (a.hub || '').toUpperCase().trim();
-          a.recebedor = (a.recebedor || '').toUpperCase().trim();
-          a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
-
-          a.id = `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
-
-          a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
-
-          this.agendamentos.set(a.id, a);
+          this.processarAgendamento(a);
         });
       } catch (e) {
         console.log('Erro ao carregar agendamentos:', e);
       }
     }
-
-    console.log('Map de agendamentos:', this.agendamentos);
-
   }
 
   saveToStorage() {
@@ -39,13 +63,10 @@ class AgendamentoService {
   }
 
   async create(uf, hub, recebedor, tipo = 'PADRÃO') {
-
     uf = uf.toUpperCase().trim();
     hub = hub.toUpperCase().trim();
     recebedor = recebedor.toUpperCase().trim();
     tipo = tipo.toUpperCase().trim();
-
-    console.log('Criando agendamento:', { uf, hub, recebedor, tipo });
 
     const id = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
     const novo = {
@@ -95,30 +116,13 @@ class AgendamentoService {
     hub = (hub || '').toUpperCase().trim();
     estado = (estado || '').toUpperCase().trim();
 
-    console.log('🔍 VERIFICAÇÃO DETALHADA:');
-    console.log('Buscando por:', { recebedor, hub, estado });
-    console.log('Total agendamentos:', this.agendamentos.size);
-
     for (let [id, agendamento] of this.agendamentos.entries()) {
-      console.log('Comparando com agendamento:', {
-        id,
-        agendamento_recebedor: agendamento.recebedor,
-        agendamento_hub: agendamento.hub,
-        agendamento_uf: agendamento.uf,
-        recebedor_igual: agendamento.recebedor === recebedor,
-        hub_igual: agendamento.hub === hub,
-        uf_igual: agendamento.uf === estado
-      });
-
       if (agendamento.recebedor === recebedor &&
         agendamento.hub === hub &&
         agendamento.uf === estado) {
-        console.log('✅ AGENDAMENTO ENCONTRADO!', agendamento);
         return true;
       }
     }
-
-    console.log('❌ NENHUM AGENDAMENTO ENCONTRADO');
     return false;
   }
 

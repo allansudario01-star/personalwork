@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
   configurarInterface();
   configurarTabs();
   configurarBotoes();
-  configurarGridPosicoes();
   configurarModals();
 
   renderizarPallets();
@@ -50,10 +49,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarInterface() {
-
     const metaViewport = document.querySelector('meta[name=viewport]');
     metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover';
-
     document.querySelectorAll('input').forEach(input => {
       input.addEventListener('focus', () => {
         input.style.fontSize = '16px';
@@ -65,15 +62,15 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const tabName = e.target.dataset.tab;
-
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-
         e.target.classList.add('active');
         document.getElementById(tabName + '-tab').classList.add('active');
-
         if (tabName === 'finalizados') {
           renderizarFinalizados();
+        }
+        if (tabName === 'agendamentos') {
+          renderizarAgendamentos();
         }
       });
     });
@@ -82,57 +79,61 @@ document.addEventListener('DOMContentLoaded', function () {
   function configurarBotoes() {
 
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
-      document.getElementById('pallet-form').reset();
+      document.getElementById('tipo-pallet-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('tipo-volumetria-alta').addEventListener('click', () => {
+      document.getElementById('tipo-pallet-modal').classList.add('hidden');
       document.getElementById('pallet-modal').classList.remove('hidden');
+    });
+    document.getElementById('tipo-diversos').addEventListener('click', () => {
+      document.getElementById('tipo-pallet-modal').classList.add('hidden');
+      document.getElementById('pallet-diversos-modal').classList.remove('hidden');
+    });
+    document.getElementById('cancel-tipo-modal').addEventListener('click', () => {
+      document.getElementById('tipo-pallet-modal').classList.add('hidden');
+    });
+
+    document.getElementById('pallet-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = {
+        notaFiscal: document.getElementById('nf').value,
+        recebedor: document.getElementById('recebedor').value,
+        hub: document.getElementById('hub').value,
+        estado: document.getElementById('estado').value,
+        cidade: document.getElementById('cidade').value,
+        maxVolumes: document.getElementById('maxVolumes').value
+      };
+      await window.palletService.create(dados, 'VOLUMETRIA_ALTA');
+      document.getElementById('pallet-modal').classList.add('hidden');
+      renderizarPallets();
+    });
+
+    document.getElementById('pallet-diversos-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = {
+        hub: document.getElementById('hub-diversos').value,
+        estado: document.getElementById('estado-diversos').value,
+        cidade: document.getElementById('cidade-diversos').value
+      };
+      await window.palletService.create(dados, 'DIVERSOS');
+      document.getElementById('pallet-diversos-modal').classList.add('hidden');
+      renderizarPallets();
     });
 
     document.getElementById('close-modal').addEventListener('click', () => {
       document.getElementById('pallet-modal').classList.add('hidden');
     });
-
-    document.getElementById('pallet-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const posicao = document.getElementById('palletPosicao').value;
-      if (!posicao) {
-        alert('❌ Selecione uma posição');
-        return;
-      }
-
-      const dados = {
-        notaFiscal: document.getElementById('nf').value,
-        recebedor: document.getElementById('recebedor').value.toUpperCase().trim(),
-        hub: document.getElementById('hub').value.toUpperCase().trim(),
-        estado: document.getElementById('estado').value.toUpperCase().trim(),
-        cidade: document.getElementById('cidade').value.toUpperCase().trim(),
-        maxVolumes: parseInt(document.getElementById('maxVolumes').value),
-        palletPosicao: posicao
-      };
-
-      const pallet = await window.palletService.create(dados);
-
-      document.getElementById('pallet-modal').classList.add('hidden');
-
-      renderizarPallets();
-
-      const isAgendado = window.agendamentoService.verificar(
-        dados.recebedor,
-        dados.hub,
-        dados.estado
-      );
-
-      setTimeout(() => {
-        window.palletService.imprimirEtiqueta(pallet, isAgendado);
-      }, 100);
+    document.getElementById('close-diversos-modal').addEventListener('click', () => {
+      document.getElementById('pallet-diversos-modal').classList.add('hidden');
+    });
+    document.getElementById('close-ajustar-modal').addEventListener('click', () => {
+      document.getElementById('ajustar-modal').classList.add('hidden');
     });
 
-    document.getElementById('position-filter').addEventListener('change', renderizarPallets);
     document.getElementById('search-nf').addEventListener('input', debounce(renderizarPallets, 300));
-
-    document.getElementById('search-finalizados')?.addEventListener('input',
-      debounce(renderizarFinalizados, 300)
-    );
-
+    document.getElementById('search-agendamentos').addEventListener('input', debounce(renderizarAgendamentos, 300));
+    document.getElementById('search-finalizados')?.addEventListener('input', debounce(renderizarFinalizados, 300));
     document.getElementById('clear-history')?.addEventListener('click', () => {
       if (confirm('⚠️ Limpar todo o histórico de pallets finalizados?')) {
         window.palletService.limparHistorico();
@@ -140,179 +141,211 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    document.getElementById('create-agendamento-btn').addEventListener('click', () => {
-      document.getElementById('agendamento-form').classList.remove('hidden');
+    document.getElementById('save-volume').addEventListener('click', async () => {
+      if (!window.palletAtual) return;
+      const novosVolumes = parseInt(document.getElementById('manual-volume').value) || 0;
+      await window.palletService.updateVolumes(window.palletAtual, novosVolumes);
+      document.getElementById('ajustar-modal').classList.add('hidden');
+      renderizarPallets();
     });
 
-    document.getElementById('cancel-agendamento').addEventListener('click', () => {
-      document.getElementById('agendamento-form').classList.add('hidden');
-    });
-
-    document.getElementById('agendamento-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      await window.agendamentoService.create(
-        document.getElementById('ag-uf').value,
-        document.getElementById('ag-hub').value,
-        document.getElementById('ag-recebedor').value,
-        document.getElementById('ag-tipo').value
-      );
-
-      e.target.reset();
-      document.getElementById('agendamento-form').classList.add('hidden');
-      renderizarAgendamentos();
-    });
-
-    document.getElementById('clear-agendamentos-btn').addEventListener('click', () => {
-      if (confirm('⚠️ Limpar TODOS os agendamentos?')) {
-        window.agendamentoService.limparTodos();
-        renderizarAgendamentos();
+    document.getElementById('finalize-from-ajustar').addEventListener('click', () => {
+      const pallet = window.palletService.pallets.get(window.palletAtual);
+      if (!pallet) return;
+      document.getElementById('ajustar-modal').classList.add('hidden');
+      if (pallet.tipo === 'VOLUMETRIA_ALTA') {
+        document.getElementById('finalizar-modal').classList.remove('hidden');
+      } else {
+        finalizarPalletDireto(window.palletAtual, false);
       }
     });
 
-    document.getElementById('import-excel-btn').addEventListener('click', importarExcel);
+    document.getElementById('delete-from-ajustar').addEventListener('click', async () => {
+      if (confirm('⚠️ Tem certeza que deseja excluir este pallet?')) {
+        await window.palletService.excluir(window.palletAtual);
+        document.getElementById('ajustar-modal').classList.add('hidden');
+        renderizarPallets();
+      }
+    });
+
+    document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
+      await finalizarPalletComConfirmacao(window.palletAtual, true);
+    });
+    document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
+      await finalizarPalletComConfirmacao(window.palletAtual, false);
+    });
+    document.getElementById('cancel-finalizar').addEventListener('click', () => {
+      document.getElementById('finalizar-modal').classList.add('hidden');
+    });
+
+    document.getElementById('confirmar-imprimir').addEventListener('click', async () => {
+      const fileInput = document.getElementById('imagem-qrcode');
+      const file = fileInput.files[0];
+      let imagemBase64 = null;
+      if (file) {
+        imagemBase64 = await lerArquivoComoBase64(file);
+      }
+      const pallet = window.palletService.pallets.get(window.palletAImprimir);
+      if (pallet) {
+        const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+        window.palletService.imprimirEtiqueta(pallet, isAgendado, imagemBase64);
+      }
+      document.getElementById('anexar-imagem-modal').classList.add('hidden');
+    });
+
+    document.getElementById('imprimir-sem-imagem').addEventListener('click', () => {
+      const pallet = window.palletService.pallets.get(window.palletAImprimir);
+      if (pallet) {
+        const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+        window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
+      }
+      document.getElementById('anexar-imagem-modal').classList.add('hidden');
+    });
+
+    document.getElementById('cancelar-imagem-modal').addEventListener('click', () => {
+      document.getElementById('anexar-imagem-modal').classList.add('hidden');
+    });
   }
 
-  function configurarGridPosicoes() {
-    const grid = document.getElementById('position-grid');
-    const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-
-    let html = '';
-    letras.forEach(letra => {
-      for (let i = 1; i <= 5; i++) {
-        html += `<button type="button" class="position-btn" data-pos="${letra}${i}">${letra}${i}</button>`;
-      }
+  function lerArquivoComoBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
+  }
 
-    grid.innerHTML = html;
+  async function finalizarPalletComConfirmacao(id, bipado) {
+    await window.palletService.finalizar(id, bipado);
+    document.getElementById('finalizar-modal').classList.add('hidden');
+    renderizarPallets();
+    renderizarFinalizados();
+  }
 
-    grid.querySelectorAll('.position-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        grid.querySelectorAll('.position-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        document.getElementById('palletPosicao').value = btn.dataset.pos;
-      });
-    });
+  async function finalizarPalletDireto(id, bipado) {
+    await window.palletService.finalizar(id, bipado);
+    renderizarPallets();
+    renderizarFinalizados();
   }
 
   function configurarModals() {
 
-    document.querySelectorAll('.btn-volume').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const valor = parseInt(e.target.dataset.value);
-        const atual = parseInt(document.getElementById('manual-volume').value) || 0;
-        document.getElementById('manual-volume').value = Math.max(0, atual + valor);
-      });
-    });
-
-    document.getElementById('save-volume').addEventListener('click', async () => {
-      if (!window.palletAtual) return;
-
-      const novos = parseInt(document.getElementById('manual-volume').value) || 0;
-      await window.palletService.updateVolumes(window.palletAtual, novos);
-
-      document.getElementById('volume-modal').classList.add('hidden');
-      renderizarPallets();
-    });
-
-    document.getElementById('finalize-pallet').addEventListener('click', () => {
-      if (window.palletAtual) {
-        document.getElementById('volume-modal').classList.add('hidden');
-        document.getElementById('finalizar-modal').classList.remove('hidden');
-      }
-    });
-
-    document.getElementById('close-volume-modal').addEventListener('click', () => {
-      document.getElementById('volume-modal').classList.add('hidden');
-    });
-
-    document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
-      if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual, true);
-        document.getElementById('finalizar-modal').classList.add('hidden');
-        renderizarPallets();
-        renderizarFinalizados();
-      }
-    });
-
-    document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
-      if (window.palletAtual) {
-        await window.palletService.finalizar(window.palletAtual, false);
-        document.getElementById('finalizar-modal').classList.add('hidden');
-        renderizarPallets();
-        renderizarFinalizados();
-      }
-    });
-
-    document.getElementById('cancel-finalizar').addEventListener('click', () => {
-      document.getElementById('finalizar-modal').classList.add('hidden');
-    });
   }
 
   function configurarMonitorConexao() {
     window.addEventListener('online', () => {
       document.getElementById('offline-banner').classList.add('hidden');
     });
-
     window.addEventListener('offline', () => {
       document.getElementById('offline-banner').classList.remove('hidden');
     });
   }
 
-  window.abrirModalVolumes = function (id) {
+  window.abrirModalAjustar = function (id) {
     const p = window.palletService.pallets.get(id);
     if (!p) return;
-
     window.palletAtual = id;
-    document.getElementById('volume-info').innerHTML = `
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                <strong style="font-size: 18px;">NF ${p.notaFiscal}</strong><br>
-                <div style="margin-top: 10px;">
-                    <span>Posição: <strong>${p.palletPosicao}</strong></span><br>
-                    <span>Volumes: <strong>${p.volumesAtuais} / ${p.maxVolumes}</strong></span>
+    const isVolumetriaAlta = p.tipo === 'VOLUMETRIA_ALTA';
+    const modalTitle = document.getElementById('ajustar-modal-title');
+    const infoDiv = document.getElementById('ajustar-info');
+    const volumeControls = document.getElementById('volume-controls-container');
+    const saveButton = document.getElementById('save-volume');
+
+    modalTitle.innerText = isVolumetriaAlta ? `Ajustar Pallet - NF ${p.notaFiscal}` : `Pallet Diversos - ${p.hub} / ${p.estado}`;
+
+    if (isVolumetriaAlta) {
+      infoDiv.innerHTML = `
+                <div>
+                    <strong>Número Fiscal:</strong> ${p.notaFiscal}<br>
+                    <strong>Recebedor:</strong> ${p.recebedor}<br>
+                    <strong>Unidade:</strong> ${p.hub}<br>
+                    <strong>UF:</strong> ${p.estado}<br>
+                    <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}
                 </div>
-            </div>
-        `;
-    document.getElementById('manual-volume').value = p.volumesAtuais;
-    document.getElementById('volume-modal').classList.remove('hidden');
+            `;
+      volumeControls.innerHTML = `
+                <button class="btn-volume" data-value="-10">-10</button>
+                <button class="btn-volume" data-value="-5">-5</button>
+                <button class="btn-volume" data-value="-1">-1</button>
+                <input type="number" id="manual-volume" min="0" value="${p.volumesAtuais}" placeholder="0">
+                <button class="btn-volume" data-value="1">+1</button>
+                <button class="btn-volume" data-value="5">+5</button>
+                <button class="btn-volume" data-value="10">+10</button>
+            `;
+      saveButton.style.display = 'block';
+
+      volumeControls.querySelectorAll('.btn-volume').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const valor = parseInt(e.target.dataset.value);
+          const atual = parseInt(document.getElementById('manual-volume').value) || 0;
+          document.getElementById('manual-volume').value = Math.max(0, atual + valor);
+        });
+      });
+    } else {
+      infoDiv.innerHTML = `
+                <div>
+                    <strong>Unidade:</strong> ${p.hub}<br>
+                    <strong>UF:</strong> ${p.estado}<br>
+                    <strong>Cidade:</strong> ${p.cidade || 'Não informada'}<br>
+                    <strong>Volumes:</strong> DIVERSOS
+                </div>
+            `;
+      volumeControls.innerHTML = `<div style="text-align: center; color: #7f8c8d;">Não é possível ajustar volumes para pallets de diversos.</div>`;
+      saveButton.style.display = 'none';
+    }
+    document.getElementById('ajustar-modal').classList.remove('hidden');
   };
 
   window.finalizarPallet = function (id) {
     const p = window.palletService.pallets.get(id);
     if (!p) return;
-
     window.palletAtual = id;
-    document.getElementById('finalizar-modal').classList.remove('hidden');
+    if (p.tipo === 'VOLUMETRIA_ALTA') {
+      document.getElementById('finalizar-modal').classList.remove('hidden');
+    } else {
+      finalizarPalletDireto(id, false);
+    }
   };
 
-  window.deletarAgendamento = function (id) {
-    if (confirm('🗑️ Remover este agendamento?')) {
-      window.agendamentoService.delete(id);
-      renderizarAgendamentos();
+  window.anexarPallet = async function (id) {
+    const palletPrincipal = window.palletService.pallets.get(id);
+    if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') {
+      alert('Só é possível anexar a pallets de volumetria alta.');
+      return;
+    }
+    const novoPallet = await window.palletService.anexarPallet(id);
+    if (novoPallet) {
+      alert(`Pallet anexado criado com sucesso!`);
+      renderizarPallets();
+    } else {
+      alert('Erro ao criar pallet anexado.');
+    }
+  };
+
+  window.imprimirPallet = function (id) {
+    window.palletAImprimir = id;
+    document.getElementById('anexar-imagem-modal').classList.remove('hidden');
+  };
+
+  window.excluirPallet = async function (id) {
+    if (confirm('⚠️ Tem certeza que deseja excluir este pallet?')) {
+      await window.palletService.excluir(id);
+      renderizarPallets();
     }
   };
 
   window.reimprimirEtiqueta = function (id) {
     const pallet = window.palletService.finalizados.get(id);
     if (!pallet) return;
-
-    const isAgendado = window.agendamentoService.verificar(
-      pallet.recebedor,
-      pallet.hub,
-      pallet.estado
-    );
-
-    window.palletService.imprimirEtiqueta(pallet, isAgendado);
+    const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+    window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
   };
 
   function renderizarPallets() {
-    const filtro = document.getElementById('position-filter').value;
     const busca = document.getElementById('search-nf').value;
-
-    const pallets = window.palletService.listar(filtro, busca);
+    const pallets = window.palletService.listar(busca);
     const lista = document.getElementById('pallets-list');
-
-    console.log('📋 RENDERIZANDO PALLETS:', pallets.length);
 
     if (pallets.length === 0) {
       lista.innerHTML = '<div style="text-align: center; padding: 50px; color: #7f8c8d;">📦 Nenhum pallet ativo</div>';
@@ -321,81 +354,63 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let html = '';
     pallets.forEach(p => {
-      const progresso = (p.volumesAtuais / p.maxVolumes) * 100;
-
-      // Log detalhado do pallet
-      console.log('Verificando pallet:', {
-        nf: p.notaFiscal,
-        recebedor: p.recebedor,
-        hub: p.hub,
-        estado: p.estado,
-        posicao: p.palletPosicao
-      });
-
-      const agendado = window.agendamentoService.verificar(
-        p.recebedor,
-        p.hub,
-        p.estado
-      );
-
-      console.log('Resultado agendado:', agendado ? 'SIM' : 'NÃO');
-
-      const completo = p.volumesAtuais >= p.maxVolumes;
+      const agendado = window.agendamentoService.verificar(p.recebedor, p.hub, p.estado);
+      const isDiversos = p.tipo === 'DIVERSOS';
+      const cardClass = `pallet-card ${agendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''}`;
 
       html += `
-            <div class="pallet-card ${agendado ? 'agendado' : ''}">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <span class="nf-tag">NF ${p.notaFiscal}</span>
-                    ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
+                <div class="${cardClass}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span class="nf-tag">${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
+                        ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <small>Recebedor</small>
+                            <strong>${p.recebedor}</strong>
+                        </div>
+                        <div class="info-item">
+                            <small>Unidade/UF</small>
+                            <strong>${p.hub} - ${p.estado}</strong>
+                        </div>
+                        ${!isDiversos ? `
+                        <div class="info-item">
+                            <small>Cidade</small>
+                            <strong>${p.cidade}</strong>
+                        </div>
+                        ` : ''}
+                        <div class="info-item">
+                            <small>Volumes</small>
+                            <strong>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais} / ${p.maxVolumes}`}</strong>
+                        </div>
+                    </div>
+
+                    ${!isDiversos && p.volumesAtuais >= p.maxVolumes ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
+
+                    <div class="card-actions">
+                        <button onclick="abrirModalAjustar('${p.id}')">Ajustar</button>
+                        <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
+                        ${!isDiversos ? `<button onclick="anexarPallet('${p.id}')">Anexar Pallet</button>` : ''}
+                        <button onclick="imprimirPallet('${p.id}')">Imprimir</button>
+                        <button onclick="excluirPallet('${p.id}')">Excluir</button>
+                    </div>
                 </div>
-
-                <div class="info-grid">
-                    <div class="info-item">
-                        <small>Recebedor</small>
-                        <strong>${p.recebedor}</strong>
-                    </div>
-                    <div class="info-item">
-                        <small>Hub/UF</small>
-                        <strong>${p.hub} - ${p.estado}</strong>
-                    </div>
-                    <div class="info-item">
-                        <small>Cidade</small>
-                        <strong>${p.cidade}</strong>
-                    </div>
-                    <div class="info-item">
-                        <small>Posição</small>
-                        <strong>${p.palletPosicao}</strong>
-                    </div>
-                </div>
-
-                <div>
-                    <span class="volume-display">${p.volumesAtuais}</span>
-                    <span style="color: #7f8c8d;">/ ${p.maxVolumes}</span>
-
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${progresso}%"></div>
-                    </div>
-
-                    ${completo ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
-                </div>
-
-                <div class="card-actions">
-                    <button onclick="abrirModalVolumes('${p.id}')">Ajustar</button>
-                    <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
-                </div>
-            </div>
-        `;
+            `;
     });
-
     lista.innerHTML = html;
   }
 
   function renderizarAgendamentos() {
+    const busca = document.getElementById('search-agendamentos').value.toLowerCase();
+    let agendamentos = window.agendamentoService.listar();
+    if (busca) {
+      agendamentos = agendamentos.filter(a => a.displayString.toLowerCase().includes(busca));
+    }
     const lista = document.getElementById('agendamentos-list');
-    const agendamentos = window.agendamentoService.listar();
 
     if (agendamentos.length === 0) {
-      lista.innerHTML = '<div style="text-align: center; padding: 20px; color: #7f8c8d;">📋 Nenhum agendamento cadastrado</div>';
+      lista.innerHTML = '<div style="text-align: center; padding: 20px; color: #7f8c8d;">📋 Nenhum agendamento encontrado</div>';
       return;
     }
 
@@ -407,11 +422,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         ${a.displayString}
                         <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
                     </div>
-                    <button class="delete-agendamento" onclick="deletarAgendamento('${a.id}')">🗑️</button>
                 </div>
             `;
     });
-
     lista.innerHTML = html;
   }
 
@@ -428,65 +441,32 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
     finalizados.forEach(p => {
       const dataFinalizacao = new Date(p.finalizadoEm).toLocaleDateString('pt-BR');
-
+      const isDiversos = p.tipo === 'DIVERSOS';
       html += `
                 <div class="finalizado-card">
                     <div class="finalizado-header">
-                        <span>NF ${p.notaFiscal}</span>
-                        <span class="finalizado-badge ${p.bipado ? 'bipado' : 'nao-bipado'}">
+                        <span>${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
+                        ${!isDiversos ? `<span class="finalizado-badge ${p.bipado ? 'bipado' : 'nao-bipado'}">
                             ${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}
-                        </span>
+                        </span>` : ''}
                     </div>
 
                     <div class="finalizado-info">
                         <div><small>Recebedor</small><br>${p.recebedor}</div>
-                        <div><small>Hub/UF</small><br>${p.hub} - ${p.estado}</div>
-                        <div><small>Volumes</small><br>${p.volumesAtuais}/${p.maxVolumes}</div>
+                        <div><small>Unidade/UF</small><br>${p.hub} - ${p.estado}</div>
+                        <div><small>Volumes</small><br>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais}/${p.maxVolumes}`}</div>
                         <div><small>Finalizado</small><br>${dataFinalizacao}</div>
                     </div>
 
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button onclick="reimprimirEtiqueta('${p.id}')" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
+                    <div style="margin-top: 15px;">
+                        <button onclick="reimprimirEtiqueta('${p.id}')" style="width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
                             🖨️ Reimprimir
                         </button>
                     </div>
                 </div>
             `;
     });
-
     lista.innerHTML = html;
-  }
-
-  async function importarExcel() {
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv, .txt, .xlsx';
-
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-
-      reader.onload = async (event) => {
-        try {
-          const conteudo = event.target.result;
-          const resultados = await window.agendamentoService.importarDoExcel(conteudo);
-
-          alert(`✅ ${resultados.length} agendamentos importados com sucesso!`);
-          renderizarAgendamentos();
-
-        } catch (error) {
-          alert('❌ Erro ao importar. Verifique o formato do arquivo.');
-          console.error(error);
-        }
-      };
-
-      reader.readAsText(file);
-    };
-
-    input.click();
   }
 
   function debounce(func, wait) {

@@ -168,27 +168,6 @@ h2 {
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.agendamento-actions {
-  display: flex;
-  gap: 12px;
-  margin: 16px 0;
-  flex-wrap: wrap;
-}
-
-.agendamento-actions button {
-  flex: 1;
-  margin: 0;
-  min-width: 100px;
-}
-
-.form-compact {
-  background: white;
-  padding: 16px;
-  border-radius: 16px;
-  margin: 16px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
 .pallet-card {
   background: white;
   border-radius: 18px;
@@ -200,13 +179,14 @@ h2 {
   touch-action: manipulation;
 }
 
-.pallet-card:active {
-  transform: scale(0.99);
-}
-
 .pallet-card.agendado {
   border-left: 6px solid #f39c12;
   background: linear-gradient(to right, #fffef7, white);
+}
+
+.pallet-card.diversos {
+  border-left: 6px solid #7f8c8d;
+  background: #fcfcfc;
 }
 
 .nf-tag {
@@ -299,6 +279,7 @@ h2 {
   display: flex;
   gap: 12px;
   margin-top: 14px;
+  flex-wrap: wrap;
 }
 
 .card-actions button {
@@ -313,18 +294,33 @@ h2 {
   touch-action: manipulation;
 }
 
-.card-actions button:first-child {
+.card-actions button:active {
+  opacity: 0.8;
+}
+
+.card-actions button:nth-child(1) {
   background: #3498db;
   color: white;
 }
 
-.card-actions button:last-child {
+.card-actions button:nth-child(2) {
   background: #95a5a6;
   color: white;
 }
 
-.card-actions button:active {
-  opacity: 0.8;
+.card-actions button:nth-child(3) {
+  background: #f1c40f;
+  color: #2c3e50;
+}
+
+.card-actions button:nth-child(4) {
+  background: #e67e22;
+  color: white;
+}
+
+.card-actions button:nth-child(5) {
+  background: #e74c3c;
+  color: white;
 }
 
 .modal {
@@ -393,35 +389,11 @@ h2 {
   background: white;
 }
 
-.position-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+.tipo-options {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   margin: 20px 0;
-}
-
-.position-btn {
-  padding: 16px 4px;
-  border: 2px solid #e5e5e5;
-  border-radius: 14px;
-  background: white;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  touch-action: manipulation;
-}
-
-.position-btn.selected {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
-  transform: scale(0.96);
-}
-
-.position-btn:active {
-  transform: scale(0.95);
-  background: #2980b9;
 }
 
 .volume-controls {
@@ -489,24 +461,12 @@ h2 {
   opacity: 0.5;
 }
 
-#volume-info {
+#ajustar-info {
   background: #f8f9fa;
   padding: 16px;
   border-radius: 14px;
   margin-bottom: 16px;
   text-align: center;
-}
-
-#volume-info p {
-  margin: 8px 0;
-  font-size: 16px;
-}
-
-#volume-info strong {
-  font-size: 24px;
-  color: #3498db;
-  display: block;
-  margin: 8px 0;
 }
 
 .volume-actions {
@@ -562,27 +522,6 @@ h2 {
   font-size: 12px;
   display: block;
   margin-top: 6px;
-}
-
-.delete-agendamento {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s;
-  touch-action: manipulation;
-}
-
-.delete-agendamento:active {
-  opacity: 0.8;
-  transform: scale(0.96);
 }
 
 .finalizado-card {
@@ -670,15 +609,6 @@ h2 {
     gap: 8px;
   }
 
-  .position-grid {
-    gap: 6px;
-  }
-
-  .position-btn {
-    padding: 12px 2px;
-    font-size: 13px;
-  }
-
   .btn-volume {
     min-width: 52px;
     padding: 14px 4px;
@@ -740,9 +670,8 @@ h2 {
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
     margin: 0;
-    padding: 2cm;
+    padding: 0;
     background: white;
   }
 }

@@ -1,12 +1,28 @@
 class PalletService {
     constructor() {
         this.pallets = new Map();
+
         this.finalizados = new Map();
+
         this.loadFromStorage();
+        this.setupRealtimeListener();
+    }
+
+    setupRealtimeListener() {
+        if (window.db) {
+
+            window.db.collection('agendamentos').onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+
+                        if (window.renderizarPallets) window.renderizarPallets();
+                    }
+                });
+            });
+        }
     }
 
     loadFromStorage() {
-
         const saved = localStorage.getItem('pallets');
         if (saved) {
             try {
@@ -38,22 +54,47 @@ class PalletService {
         localStorage.setItem('palletsFinalizados', JSON.stringify(lista));
     }
 
-    async create(data) {
+    async create(data, tipo) {
         const id = Date.now().toString();
-        const novo = {
+        const basePallet = {
             id,
-            ...data,
-            volumesAtuais: 0,
+            tipo: tipo,
+
             criadoEm: new Date().toISOString(),
             ultimaAtualizacao: new Date().toISOString(),
             status: 'ativo',
-            bipado: false
+            bipado: false,
+            palletsVinculados: [],
+
+            palletPrincipalId: null
+
         };
 
-        novo.recebedor = novo.recebedor.toUpperCase().trim();
-        novo.hub = novo.hub.toUpperCase().trim();
-        novo.estado = novo.estado.toUpperCase().trim();
-        novo.cidade = novo.cidade.toUpperCase().trim();
+        let novo;
+        if (tipo === 'VOLUMETRIA_ALTA') {
+            novo = {
+                ...basePallet,
+                notaFiscal: data.notaFiscal.toUpperCase().trim(),
+                recebedor: data.recebedor.toUpperCase().trim(),
+                hub: data.hub.toUpperCase().trim(),
+                estado: data.estado.toUpperCase().trim(),
+                cidade: data.cidade.toUpperCase().trim(),
+                maxVolumes: parseInt(data.maxVolumes),
+                volumesAtuais: 0
+            };
+        } else {
+
+            novo = {
+                ...basePallet,
+                notaFiscal: 'DIVERSOS',
+                recebedor: 'DIVERSOS',
+                hub: data.hub.toUpperCase().trim(),
+                estado: data.estado.toUpperCase().trim(),
+                cidade: data.cidade ? data.cidade.toUpperCase().trim() : '',
+                maxVolumes: null,
+                volumesAtuais: null
+            };
+        }
 
         this.pallets.set(id, novo);
         this.saveToStorage();
@@ -67,9 +108,48 @@ class PalletService {
         return novo;
     }
 
+    async anexarPallet(idPalletPrincipal) {
+        const palletPrincipal = this.pallets.get(idPalletPrincipal);
+        if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') {
+            console.error('Só é possível anexar a pallets de volumetria alta');
+            return null;
+        }
+
+        const novoId = Date.now().toString();
+        const palletAnexado = {
+            ...palletPrincipal,
+            id: novoId,
+            palletPrincipalId: idPalletPrincipal,
+            criadoEm: new Date().toISOString(),
+            ultimaAtualizacao: new Date().toISOString(),
+            status: 'ativo',
+            volumesAtuais: 0,
+            palletsVinculados: []
+
+        };
+
+        this.pallets.set(novoId, palletAnexado);
+
+        palletPrincipal.palletsVinculados.push(novoId);
+        this.pallets.set(idPalletPrincipal, palletPrincipal);
+
+        this.saveToStorage();
+
+        try {
+            await window.db.collection('pallets').doc(novoId).set(palletAnexado);
+            await window.db.collection('pallets').doc(idPalletPrincipal).update({
+                palletsVinculados: palletPrincipal.palletsVinculados
+            });
+        } catch (e) {
+            console.log('Offline: anexo salvo localmente');
+        }
+
+        return palletAnexado;
+    }
+
     async updateVolumes(id, novosVolumes) {
         const pallet = this.pallets.get(id);
-        if (!pallet) return;
+        if (!pallet || pallet.tipo !== 'VOLUMETRIA_ALTA') return;
 
         pallet.volumesAtuais = Math.min(novosVolumes, pallet.maxVolumes);
         if (pallet.volumesAtuais < 0) pallet.volumesAtuais = 0;
@@ -92,6 +172,30 @@ class PalletService {
         const pallet = this.pallets.get(id);
         if (!pallet) return;
 
+        if (pallet.palletPrincipalId) {
+            const principal = this.pallets.get(pallet.palletPrincipalId);
+            if (principal) {
+                const index = principal.palletsVinculados.indexOf(id);
+                if (index > -1) principal.palletsVinculados.splice(index, 1);
+                this.pallets.set(principal.id, principal);
+                this.saveToStorage();
+            }
+        }
+
+        if (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.palletsVinculados.length > 0) {
+            for (const anexoId of pallet.palletsVinculados) {
+                const anexo = this.pallets.get(anexoId);
+                if (anexo && anexo.status === 'ativo') {
+                    anexo.finalizadoEm = new Date().toISOString();
+                    anexo.bipado = bipado;
+
+                    anexo.status = 'finalizado';
+                    this.finalizados.set(anexoId, anexo);
+                    this.pallets.delete(anexoId);
+                }
+            }
+        }
+
         pallet.finalizadoEm = new Date().toISOString();
         pallet.bipado = bipado;
         pallet.status = 'finalizado';
@@ -110,22 +214,37 @@ class PalletService {
         }
     }
 
-    listar(filtroPosicao = '', buscaNF = '') {
-        let lista = Array.from(this.pallets.values());
+    async excluir(id) {
+        const pallet = this.pallets.get(id);
+        if (!pallet) return;
 
-        if (filtroPosicao) {
-            lista = lista.filter(p => p.palletPosicao?.startsWith(filtroPosicao));
+        if (pallet.palletPrincipalId) {
+            const principal = this.pallets.get(pallet.palletPrincipalId);
+            if (principal) {
+                const index = principal.palletsVinculados.indexOf(id);
+                if (index > -1) principal.palletsVinculados.splice(index, 1);
+                this.pallets.set(principal.id, principal);
+            }
         }
+
+        this.pallets.delete(id);
+        this.saveToStorage();
+
+        try {
+            await window.db.collection('pallets').doc(id).delete();
+        } catch (e) {
+            console.log('Offline: excluído localmente');
+        }
+    }
+
+    listar(buscaNF = '') {
+        let lista = Array.from(this.pallets.values());
 
         if (buscaNF) {
             lista = lista.filter(p => p.notaFiscal?.includes(buscaNF));
         }
 
-        return lista.sort((a, b) => {
-            const aCompleto = a.volumesAtuais >= a.maxVolumes ? 1 : 0;
-            const bCompleto = b.volumesAtuais >= b.maxVolumes ? 1 : 0;
-            return aCompleto - bCompleto;
-        });
+        return lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
     }
 
     listarFinalizados(busca = '') {
@@ -135,7 +254,9 @@ class PalletService {
             const buscaUpper = busca.toUpperCase();
             lista = lista.filter(p =>
                 p.notaFiscal?.includes(busca) ||
-                p.recebedor?.includes(buscaUpper)
+                p.recebedor?.includes(buscaUpper) ||
+                p.hub?.includes(buscaUpper) ||
+                p.estado?.includes(buscaUpper)
             );
         }
 
@@ -147,19 +268,65 @@ class PalletService {
     limparHistorico() {
         this.finalizados.clear();
         this.saveFinalizadosToStorage();
-
         try {
 
         } catch (e) { }
     }
 
-    gerarEtiquetaHTML(pallet, isAgendado) {
+    obterTotalPalletsGrupo(palletPrincipal) {
+        if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') return 1;
+        return 1 + palletPrincipal.palletsVinculados.length;
+    }
+
+    gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
         const dataSeparacao = dataAtual.toLocaleDateString('pt-BR');
         const horaAtual = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
         const dataEmBranco = '__/__/____';
         const horaEmBranco = '__:__';
+
+        let tituloPallet = 'PALLET';
+        let notaFiscalDisplay = pallet.notaFiscal;
+        let recebedorDisplay = pallet.recebedor;
+        let hubDisplay = pallet.hub;
+        let ufCidadeDisplay = `${pallet.estado}${pallet.cidade ? ` - ${pallet.cidade}` : ''}`;
+        let volumesDisplay = '';
+        let palletsDisplay = '';
+
+        if (pallet.tipo === 'VOLUMETRIA_ALTA') {
+            tituloPallet = 'PALLET - VOLUMETRIA ALTA';
+            volumesDisplay = `
+                <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
+                    <div>
+                        <span style="font-size: 32px; font-weight: bold;">${pallet.volumesAtuais}</span>
+                        <span style="font-size: 24px;"> / ${pallet.maxVolumes}</span>
+                    </div>
+                </div>
+            `;
+            const totalPallets = this.obterTotalPalletsGrupo(pallet);
+            palletsDisplay = `
+                <div style="text-align: center; background: #f0f0f0; padding: 10px; border-radius: 8px; border: 1px solid #7f8c8d;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">PALLETS</div>
+                    <div>
+                        <span style="font-size: 32px; font-weight: bold;">${totalPallets}</span>
+                        <span style="font-size: 24px;"> / ${totalPallets}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+
+            tituloPallet = 'PALLET - DIVERSOS';
+            volumesDisplay = `
+                <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
+                    <div>
+                        <span style="font-size: 24px; font-weight: bold;">DIVERSOS</span>
+                    </div>
+                </div>
+            `;
+
+        }
 
         return `
         <div style="
@@ -167,7 +334,7 @@ class PalletService {
             width: 100%;
             max-width: 700px;
             margin: 0 auto;
-            padding: 20px 20px 10px 20px;
+            padding: 20px;
             border: 2px solid #333;
             border-radius: 10px;
             background: white;
@@ -175,9 +342,8 @@ class PalletService {
             font-size: 14px;
             page-break-inside: avoid;
         ">
-
             <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 8px;">
-                <h1 style="margin: 0; font-size: 32px;">PALLET</h1>
+                <h1 style="margin: 0; font-size: 32px;">${tituloPallet}</h1>
                 <p style="color: #666; margin: 5px 0 0 0; font-size: 12px;">${dataSeparacao} ${horaAtual}</p>
             </div>
 
@@ -185,40 +351,28 @@ class PalletService {
                 <div>
                     <div style="margin-bottom: 8px;">
                         <span style="font-size: 12px; color: #555;">UNIDADE:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${pallet.hub}</span>
+                        <span style="font-size: 18px; font-weight: bold;">${hubDisplay}</span>
                     </div>
                     <div>
                         <span style="font-size: 12px; color: #555;">RECEBEDOR:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${pallet.recebedor}</span>
+                        <span style="font-size: 18px; font-weight: bold;">${recebedorDisplay}</span>
                     </div>
                 </div>
                 <div>
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 12px; color: #555;">NOTA FISCAL:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${pallet.notaFiscal}</span>
+                        <span style="font-size: 12px; color: #555;">NÚMERO FISCAL:</span><br>
+                        <span style="font-size: 18px; font-weight: bold;">${notaFiscalDisplay}</span>
                     </div>
                     <div>
                         <span style="font-size: 12px; color: #555;">UF/CIDADE:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${pallet.estado} - ${pallet.cidade}</span>
+                        <span style="font-size: 18px; font-weight: bold;">${ufCidadeDisplay}</span>
                     </div>
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
-                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
-                    <div>
-                        <span style="font-size: 32px; font-weight: bold;">_____</span>
-                        <span style="font-size: 24px;"> / ${pallet.maxVolumes}</span>
-                    </div>
-                </div>
-                <div style="text-align: center; background: #f0f0f0; padding: 10px; border-radius: 8px; border: 1px solid #7f8c8d;">
-                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">PALLETS</div>
-                    <div>
-                        <span style="font-size: 32px; font-weight: bold;">_____</span>
-                        <span style="font-size: 24px;"> / ___</span>
-                    </div>
-                </div>
+                ${volumesDisplay}
+                ${palletsDisplay}
             </div>
 
             <div style="margin-bottom: 15px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
@@ -290,7 +444,7 @@ class PalletService {
                 <div style="display: flex; gap: 25px; align-items: center;">
                     <div style="font-size: 14px;">
                         <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${isAgendado ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">AGENDAMENTO</span>
+                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
                     </div>
                     <div style="font-size: 14px;">
                         <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${!isAgendado ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
@@ -303,22 +457,26 @@ class PalletService {
                 <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">OBSERVAÇÃO:</div>
                 <div style="border: 1px solid #333; min-height: 45px; border-radius: 4px;"></div>
             </div>
+
+            ${imagemBase64 ? `<div style="margin-top: 20px; text-align: center;">
+                <img src="${imagemBase64}" style="max-width: 100%; max-height: 200px; object-fit: contain;" />
+            </div>` : ''}
         </div>
     `;
     }
 
-    imprimirEtiqueta(pallet, isAgendado) {
-        const html = this.gerarEtiquetaHTML(pallet, isAgendado);
+    imprimirEtiqueta(pallet, isAgendado, imagemBase64 = null) {
+        const html = this.gerarEtiquetaHTML(pallet, isAgendado, imagemBase64);
 
         const janela = window.open('', '_blank');
         janela.document.write(`
         <html>
             <head>
-                <title>Etiqueta Pallet - NF ${pallet.notaFiscal}</title>
+                <title>Etiqueta Pallet - ${pallet.notaFiscal}</title>
                 <style>
                     @page {
                         size: A4;
-                        margin: 1cm;
+                        margin: 0;
                     }
                     * {
                         margin: 0;

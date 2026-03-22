@@ -1,17 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   console.log('🚀 Iniciando Pallet System Mobile...');
 
-  // Adicione no início do DOMContentLoaded
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('reset')) {
-    console.log('🔄 Reset detectado, limpando cache...');
-    localStorage.clear();
-    // Remover o parâmetro da URL
-    window.history.replaceState({}, document.title, window.location.pathname);
-    alert('✅ Cache limpo! A página vai recarregar.');
-    location.reload();
-  }
-
   if (typeof window.db === 'undefined') {
     console.error('❌ ERRO: Firebase não carregado!');
     mostrarErroFirebase();

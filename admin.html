@@ -221,6 +221,16 @@
             font-weight: bold;
         }
 
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
         .filters {
             margin: 20px 0;
             display: flex;
@@ -302,7 +312,9 @@
         <div class="filters">
             <input type="text" id="search-agendamentos" placeholder="🔍 Pesquisar agendamentos...">
             <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
-            <button id="clear-all-btn" class="btn-secondary" style="background: #e74c3c;">🗑️ LIMPAR TUDO</button>
+            <button id="clear-all-btn" class="btn-danger">🗑️ LIMPAR TUDO</button>
+            <button id="hard-reset-btn" class="btn-danger" style="background: #c0392b;">⚠️ RESET TOTAL (Firebase +
+                Local)</button>
         </div>
 
         <div id="agendamentos-list">
@@ -357,23 +369,29 @@
             setupRealtimeListener() {
                 if (db) {
                     db.collection('agendamentos').onSnapshot((snapshot) => {
+                        console.log('📡 Snapshot recebido, documentos:', snapshot.size);
                         snapshot.docChanges().forEach((change) => {
                             if (change.type === 'added') {
                                 const a = change.doc.data();
                                 this.processarAgendamento(a);
+                                console.log('➕ Adicionado:', a.displayString);
                             }
                             if (change.type === 'modified') {
                                 const a = change.doc.data();
                                 this.agendamentos.set(a.id, a);
                                 this.saveToStorage();
+                                console.log('✏️ Modificado:', a.displayString);
                             }
                             if (change.type === 'removed') {
                                 this.agendamentos.delete(change.doc.id);
                                 this.saveToStorage();
+                                console.log('🗑️ Removido:', change.doc.id);
                             }
                         });
                         this.renderizarLista();
                         this.atualizarStats();
+                    }, (error) => {
+                        console.error('❌ Erro no snapshot:', error);
                     });
                 }
             }
@@ -395,6 +413,7 @@
                     try {
                         const lista = JSON.parse(saved);
                         lista.forEach(a => this.processarAgendamento(a));
+                        console.log('📦 Carregado do localStorage:', lista.length);
                     } catch (e) {
                         console.log('Erro ao carregar agendamentos:', e);
                     }
@@ -428,6 +447,7 @@
 
                 try {
                     await db.collection('agendamentos').doc(id).set(novo);
+                    console.log('✅ Criado no Firebase:', id);
                 } catch (e) {
                     console.log('Offline: agendamento salvo localmente');
                 }
@@ -441,20 +461,89 @@
 
                 try {
                     await db.collection('agendamentos').doc(id).delete();
+                    console.log('✅ Deletado do Firebase:', id);
                 } catch (e) {
                     console.log('Offline: agendamento removido localmente');
                 }
             }
 
-            limparTodos() {
-                this.agendamentos.clear();
-                this.saveToStorage();
+            async limparTodos() {
+                console.log('🔴 INICIANDO LIMPEZA TOTAL...');
 
-                // Tentar limpar no Firebase também
-                try {
-                    const batch = db.batch();
-                    // Não dá pra fazer batch sem iterar, mas é só pra limpar local mesmo
-                } catch (e) { }
+                // 1. Limpar localStorage
+                localStorage.removeItem('agendamentos');
+                this.agendamentos.clear();
+                console.log('✅ localStorage limpo');
+
+                // 2. Apagar tudo do Firebase
+                if (db) {
+                    try {
+                        const snapshot = await db.collection('agendamentos').get();
+                        console.log(`📋 Encontrados ${snapshot.size} documentos no Firebase`);
+
+                        if (snapshot.empty) {
+                            console.log('ℹ️ Firebase já está vazio');
+                            alert('Firebase já estava vazio!');
+                            this.renderizarLista();
+                            this.atualizarStats();
+                            return;
+                        }
+
+                        let deletados = 0;
+                        for (const doc of snapshot.docs) {
+                            await doc.ref.delete();
+                            deletados++;
+                            console.log(`🗑️ Deletado ${deletados}/${snapshot.size}: ${doc.id}`);
+                        }
+
+                        console.log(`✅ ${deletados} documentos deletados do Firebase!`);
+                        alert(`✅ ${deletados} agendamentos removidos com sucesso!\n\nFirebase e localStorage foram completamente limpos.`);
+
+                        // Forçar recarregar a lista
+                        this.renderizarLista();
+                        this.atualizarStats();
+
+                    } catch (error) {
+                        console.error('❌ Erro ao limpar Firebase: ', error);
+                        alert('Erro ao limpar Firebase: ' + error.message);
+                    }
+                }
+            }
+
+            async resetTotal() {
+                console.log('⚠️⚠️⚠️ RESET TOTAL INICIADO ⚠️⚠️⚠️');
+
+                // 1. Limpar localStorage COMPLETAMENTE
+                localStorage.clear();
+                this.agendamentos.clear();
+                console.log('✅ localStorage completamente limpo');
+
+                // 2. Apagar tudo do Firebase
+                if (db) {
+                    try {
+                        const snapshot = await db.collection('agendamentos').get();
+                        console.log(`📋 Encontrados ${snapshot.size} documentos no Firebase`);
+
+                        let deletados = 0;
+                        for (const doc of snapshot.docs) {
+                            await doc.ref.delete();
+                            deletados++;
+                            console.log(`🗑️ Deletado ${deletados}/${snapshot.size}: ${doc.id}`);
+                        }
+
+                        console.log(`✅ ${deletados} documentos deletados do Firebase!`);
+                        alert(`✅ RESET TOTAL COMPLETO!\n\n${deletados} agendamentos foram removidos do Firebase e localStorage.\n\nA página será recarregada em 3 segundos...`);
+
+                        // Recarregar a página após 3 segundos
+                        setTimeout(() => {
+                            location.reload();
+                        }, 3000);
+
+                    } catch (error) {
+                        console.error('❌ Erro ao resetar Firebase: ', error);
+                        alert('Erro ao resetar Firebase: ' + error.message);
+                    }
+                }
             }
 
             listar() {
@@ -637,7 +726,7 @@
                 reader.readAsText(file);
             });
 
-            // Limpar todos
+            // Limpar todos (versão normal)
             document.getElementById('clear-all-btn').addEventListener('click', async () => {
                 if (!agendamentoService) {
                     alert('❌ Serviço não disponível.');
@@ -647,12 +736,32 @@
                 if (confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os agendamentos. Tem certeza?')) {
                     if (confirm('Última confirmação: TEM CERTEZA ABSOLUTA?')) {
                         try {
-                            agendamentoService.limparTodos();
-                            renderizarAgendamentos();
-                            atualizarStats();
-                            alert('✅ Todos os agendamentos foram removidos!');
+                            await agendamentoService.limparTodos();
                         } catch (error) {
                             alert('❌ Erro ao limpar agendamentos.');
+                        }
+                    }
+                }
+            });
+
+            // RESET TOTAL (limpa tudo mesmo)
+            document.getElementById('hard-reset-btn').addEventListener('click', async () => {
+                if (!agendamentoService) {
+                    alert('❌ Serviço não disponível.');
+                    return;
+                }
+
+                if (confirm('⚠️⚠️⚠️ RESET TOTAL ⚠️⚠️⚠️\n\nIsso vai apagar TODOS os agendamentos do Firebase E DO LOCALSTORAGE.\n\nNão tem volta! Tem certeza?')) {
+                    if (confirm('ÚLTIMA CONFIRMAÇÃO: DIGITE "RESET" para confirmar')) {
+                        const confirmacao = prompt('Digite "RESET" para confirmar a exclusão TOTAL:');
+                        if (confirmacao === 'RESET') {
+                            try {
+                                await agendamentoService.resetTotal();
+                            } catch (error) {
+                                alert('❌ Erro ao resetar totalmente.');
+                            }
+                        } else {
+                            alert('❌ Confirmação incorreta. Operação cancelada.');
                         }
                     }
                 }

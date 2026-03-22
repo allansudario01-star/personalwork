@@ -17,5 +17,13 @@ document.addEventListener('DOMContentLoaded', function () {
   window.db = firebase.firestore();
   window.auth = firebase.auth();
 
+  window.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => {
+      console.log('✅ Persistência configurada');
+    })
+    .catch((error) => {
+      console.error('❌ Erro na persistência:', error);
+    });
+
   console.log('✅ Firebase conectado!');
 });

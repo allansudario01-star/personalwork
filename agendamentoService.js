@@ -105,6 +105,21 @@ class AgendamentoService {
   limparTodos() {
     this.agendamentos.clear();
     this.saveToStorage();
+
+    if (window.db) {
+      window.db.collection('agendamentos').get().then((querySnapshot) => {
+        const batch = window.db.batch();
+        querySnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        return batch.commit();
+      }).then(() => {
+        console.log('✅ Todos os agendamentos foram removidos do Firebase.');
+      }).catch((error) => {
+        console.error('❌ Erro ao limpar Firebase: ', error);
+        alert('Erro ao limpar no servidor. Verifique sua conexão e tente novamente.');
+      });
+    }
   }
 
   listar() {

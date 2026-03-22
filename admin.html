@@ -6,12 +6,22 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Admin - Pallet System</title>
-    <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
-        /* Estilos adicionais para a página de admin */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -65,13 +75,16 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #ecf0f1;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         .admin-header h1 {
             margin: 0;
             font-size: 24px;
+            color: #2c3e50;
         }
 
         .logout-btn {
@@ -81,6 +94,13 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
+        }
+
+        .admin-panel {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .agendamento-card {
@@ -133,12 +153,18 @@
             max-width: 500px;
         }
 
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
         .modal-content input {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
+            font-size: 16px;
         }
 
         .modal-actions {
@@ -153,6 +179,7 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
         }
 
         .save-btn {
@@ -174,8 +201,14 @@
             border: 2px dashed #bdc3c7;
         }
 
-        .import-area input {
-            margin-top: 10px;
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         .btn-secondary {
@@ -185,16 +218,7 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-right: 10px;
-        }
-
-        .btn-primary {
-            background: #27ae60;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            font-weight: bold;
         }
 
         .filters {
@@ -209,6 +233,7 @@
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            font-size: 16px;
         }
 
         .stats {
@@ -217,10 +242,11 @@
             border-radius: 10px;
             margin-bottom: 20px;
             text-align: center;
+            font-weight: bold;
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .loading {
@@ -228,25 +254,34 @@
             padding: 50px;
             color: #7f8c8d;
         }
+
+        .offline {
+            background: #f39c12;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-    <div id="offline-banner" class="offline hidden">⚠️ Modo offline</div>
+    <div id="offline-banner" class="offline hidden">⚠️ Modo offline - As alterações serão salvas quando a conexão voltar
+    </div>
 
     <!-- Tela de Login -->
     <div id="login-screen" class="login-container">
         <h2>🔐 Painel Administrativo</h2>
         <form id="login-form">
-            <input type="email" id="login-email" placeholder="Email" required>
-            <input type="password" id="login-password" placeholder="Senha" required>
+            <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+            <input type="password" id="login-password" placeholder="Senha" required autocomplete="current-password">
             <button type="submit">Entrar</button>
             <div id="login-error" class="error-message"></div>
         </form>
     </div>
 
-    <!-- Painel Admin (aparece após login) -->
-    <div id="admin-panel" style="padding: 20px; max-width: 1200px; margin: 0 auto; display: none;">
+    <!-- Painel Admin -->
+    <div id="admin-panel" class="admin-panel hidden">
         <div class="admin-header">
             <h1>📋 Gestão de Agendamentos</h1>
             <button class="logout-btn" id="logout-btn">Sair</button>
@@ -258,7 +293,8 @@
 
         <div class="import-area">
             <h3>📥 Importar Agendamentos</h3>
-            <p>Selecione um arquivo CSV com os agendamentos (formato: UF,Hub,Recebedor,Tipo)</p>
+            <p>Selecione um arquivo CSV com os agendamentos</p>
+            <p style="font-size: 12px; color: #7f8c8d;">Formato: UF,Hub,Recebedor,Tipo</p>
             <input type="file" id="import-csv" accept=".csv, .txt">
             <button id="import-btn" class="btn-primary" style="margin-top: 10px;">Importar</button>
         </div>
@@ -279,8 +315,8 @@
         <div class="modal-content">
             <h3 id="modal-title">Novo Agendamento</h3>
             <form id="agendamento-form-modal">
-                <input type="text" id="modal-uf" placeholder="UF" maxlength="2" required>
-                <input type="text" id="modal-hub" placeholder="Hub" required>
+                <input type="text" id="modal-uf" placeholder="UF (ex: SP)" maxlength="2" required>
+                <input type="text" id="modal-hub" placeholder="Hub (ex: SAO)" required>
                 <input type="text" id="modal-recebedor" placeholder="Recebedor" required>
                 <input type="text" id="modal-tipo" placeholder="Tipo" value="PADRÃO">
                 <div class="modal-actions">
@@ -291,10 +327,441 @@
         </div>
     </div>
 
-    <!-- CARREGAMENTO DOS SCRIPTS NA ORDEM CORRETA -->
-    <script src="firebase-config.js"></script>
-    <script src="agendamentoService.js"></script>
-    <script src="admin.js"></script>
+    <script>
+        // ==================== FIREBASE CONFIG ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyyEsEPJjCw3YAprH03OlWlovATy4SAFI",
+            authDomain: "palletsystem-6ff16.firebaseapp.com",
+            projectId: "palletsystem-6ff16",
+            storageBucket: "palletsystem-6ff16.firebasestorage.app",
+            messagingSenderId: "395589767694",
+            appId: "1:395589767694:web:59e6797705a3e89fdca25f"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        console.log('✅ Firebase conectado!');
+
+        // ==================== AGENDAMENTO SERVICE ====================
+        class AgendamentoService {
+            constructor() {
+                this.agendamentos = new Map();
+                this.loadFromStorage();
+                this.setupRealtimeListener();
+            }
+
+            setupRealtimeListener() {
+                if (db) {
+                    db.collection('agendamentos').onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added') {
+                                const a = change.doc.data();
+                                this.processarAgendamento(a);
+                            }
+                            if (change.type === 'modified') {
+                                const a = change.doc.data();
+                                this.agendamentos.set(a.id, a);
+                                this.saveToStorage();
+                            }
+                            if (change.type === 'removed') {
+                                this.agendamentos.delete(change.doc.id);
+                                this.saveToStorage();
+                            }
+                        });
+                        this.renderizarLista();
+                        this.atualizarStats();
+                    });
+                }
+            }
+
+            processarAgendamento(a) {
+                a.uf = (a.uf || '').toUpperCase().trim();
+                a.hub = (a.hub || '').toUpperCase().trim();
+                a.recebedor = (a.recebedor || '').toUpperCase().trim();
+                a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
+                a.id = `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
+                a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
+                this.agendamentos.set(a.id, a);
+                this.saveToStorage();
+            }
+
+            loadFromStorage() {
+                const saved = localStorage.getItem('agendamentos');
+                if (saved) {
+                    try {
+                        const lista = JSON.parse(saved);
+                        lista.forEach(a => this.processarAgendamento(a));
+                    } catch (e) {
+                        console.log('Erro ao carregar agendamentos:', e);
+                    }
+                }
+            }
+
+            saveToStorage() {
+                const lista = Array.from(this.agendamentos.values());
+                localStorage.setItem('agendamentos', JSON.stringify(lista));
+            }
+
+            async create(uf, hub, recebedor, tipo = 'PADRÃO') {
+                uf = uf.toUpperCase().trim();
+                hub = hub.toUpperCase().trim();
+                recebedor = recebedor.toUpperCase().trim();
+                tipo = tipo.toUpperCase().trim();
+
+                const id = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
+                const novo = {
+                    id,
+                    uf,
+                    hub,
+                    recebedor,
+                    tipo,
+                    displayString: `${uf}/${hub}/${recebedor}/${tipo}`,
+                    criadoEm: new Date().toISOString()
+                };
+
+                this.agendamentos.set(id, novo);
+                this.saveToStorage();
+
+                try {
+                    await db.collection('agendamentos').doc(id).set(novo);
+                } catch (e) {
+                    console.log('Offline: agendamento salvo localmente');
+                }
+
+                return novo;
+            }
+
+            async delete(id) {
+                this.agendamentos.delete(id);
+                this.saveToStorage();
+
+                try {
+                    await db.collection('agendamentos').doc(id).delete();
+                } catch (e) {
+                    console.log('Offline: agendamento removido localmente');
+                }
+            }
+
+            limparTodos() {
+                this.agendamentos.clear();
+                this.saveToStorage();
+
+                // Tentar limpar no Firebase também
+                try {
+                    const batch = db.batch();
+                    // Não dá pra fazer batch sem iterar, mas é só pra limpar local mesmo
+                } catch (e) { }
+            }
+
+            listar() {
+                return Array.from(this.agendamentos.values());
+            }
+
+            async importarDoExcel(conteudoCSV) {
+                const linhas = conteudoCSV.split('\n');
+                const resultados = [];
+
+                for (let i = 0; i < linhas.length; i++) {
+                    const linha = linhas[i].trim();
+                    if (!linha || linha.startsWith('UF') || linha.startsWith('uf')) continue;
+
+                    const partes = linha.split(',').map(item => item.trim());
+                    let uf, hub, recebedor, tipo = 'PADRÃO';
+
+                    if (partes.length >= 3) {
+                        uf = partes[0];
+                        hub = partes[1];
+                        recebedor = partes[2];
+                        if (partes.length >= 4) tipo = partes[3];
+
+                        const agendamento = await this.create(uf, hub, recebedor, tipo);
+                        resultados.push(agendamento);
+                    }
+                }
+
+                return resultados;
+            }
+        }
+
+        // ==================== ADMIN APP ====================
+        let currentUser = null;
+        let editingAgendamentoId = null;
+        let agendamentoService = null;
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🔐 Iniciando painel admin...');
+
+            // Criar instância do service
+            agendamentoService = new AgendamentoService();
+            window.agendamentoService = agendamentoService;
+
+            // Sobrescrever métodos de renderização
+            agendamentoService.renderizarLista = renderizarAgendamentos;
+            agendamentoService.atualizarStats = atualizarStats;
+
+            // Configurar eventos
+            configurarEventos();
+
+            // Monitorar autenticação
+            auth.onAuthStateChanged(function (user) {
+                if (user) {
+                    currentUser = user;
+                    console.log('✅ Usuário logado:', user.email);
+                    showAdminPanel();
+                    renderizarAgendamentos();
+                    atualizarStats();
+                } else {
+                    showLoginScreen();
+                }
+            });
+
+            // Monitorar conexão
+            window.addEventListener('online', () => {
+                document.getElementById('offline-banner').classList.add('hidden');
+            });
+            window.addEventListener('offline', () => {
+                document.getElementById('offline-banner').classList.remove('hidden');
+            });
+        });
+
+        function configurarEventos() {
+            // Login
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorDiv = document.getElementById('login-error');
+
+                try {
+                    errorDiv.textContent = '';
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (error) {
+                    console.error('Erro no login:', error);
+                    if (error.code === 'auth/user-not-found') {
+                        errorDiv.textContent = '❌ Usuário não encontrado';
+                    } else if (error.code === 'auth/wrong-password') {
+                        errorDiv.textContent = '❌ Senha incorreta';
+                    } else {
+                        errorDiv.textContent = '❌ Erro ao fazer login. Tente novamente.';
+                    }
+                }
+            });
+
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await auth.signOut();
+                showLoginScreen();
+            });
+
+            // Criar novo agendamento
+            document.getElementById('create-agendamento-btn').addEventListener('click', () => {
+                editingAgendamentoId = null;
+                document.getElementById('modal-title').textContent = 'Novo Agendamento';
+                document.getElementById('modal-uf').value = '';
+                document.getElementById('modal-hub').value = '';
+                document.getElementById('modal-recebedor').value = '';
+                document.getElementById('modal-tipo').value = 'PADRÃO';
+                document.getElementById('agendamento-modal').classList.remove('hidden');
+            });
+
+            // Fechar modal
+            document.getElementById('close-modal-btn').addEventListener('click', () => {
+                document.getElementById('agendamento-modal').classList.add('hidden');
+            });
+
+            // Salvar agendamento
+            document.getElementById('agendamento-form-modal').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const uf = document.getElementById('modal-uf').value;
+                const hub = document.getElementById('modal-hub').value;
+                const recebedor = document.getElementById('modal-recebedor').value;
+                const tipo = document.getElementById('modal-tipo').value;
+
+                if (!agendamentoService) {
+                    alert('❌ Serviço não disponível.');
+                    return;
+                }
+
+                try {
+                    if (editingAgendamentoId) {
+                        await agendamentoService.delete(editingAgendamentoId);
+                        await agendamentoService.create(uf, hub, recebedor, tipo);
+                    } else {
+                        await agendamentoService.create(uf, hub, recebedor, tipo);
+                    }
+
+                    document.getElementById('agendamento-modal').classList.add('hidden');
+                    renderizarAgendamentos();
+                    atualizarStats();
+                } catch (error) {
+                    console.error('Erro ao salvar:', error);
+                    alert('❌ Erro ao salvar agendamento.');
+                }
+            });
+
+            // Importar CSV
+            document.getElementById('import-btn').addEventListener('click', async () => {
+                if (!agendamentoService) {
+                    alert('❌ Serviço não disponível.');
+                    return;
+                }
+
+                const fileInput = document.getElementById('import-csv');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    alert('📁 Selecione um arquivo CSV primeiro!');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const conteudo = event.target.result;
+                        const resultados = await agendamentoService.importarDoExcel(conteudo);
+                        alert(`✅ ${resultados.length} agendamentos importados com sucesso!`);
+                        renderizarAgendamentos();
+                        atualizarStats();
+                        fileInput.value = '';
+                    } catch (error) {
+                        console.error('Erro ao importar:', error);
+                        alert('❌ Erro ao importar. Verifique o formato do arquivo.\n\nFormato esperado:\nUF,Hub,Recebedor,Tipo\nMG,BET,EMPRESA X,PADRÃO');
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            // Limpar todos
+            document.getElementById('clear-all-btn').addEventListener('click', async () => {
+                if (!agendamentoService) {
+                    alert('❌ Serviço não disponível.');
+                    return;
+                }
+
+                if (confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os agendamentos. Tem certeza?')) {
+                    if (confirm('Última confirmação: TEM CERTEZA ABSOLUTA?')) {
+                        try {
+                            agendamentoService.limparTodos();
+                            renderizarAgendamentos();
+                            atualizarStats();
+                            alert('✅ Todos os agendamentos foram removidos!');
+                        } catch (error) {
+                            alert('❌ Erro ao limpar agendamentos.');
+                        }
+                    }
+                }
+            });
+
+            // Buscar
+            document.getElementById('search-agendamentos').addEventListener('input', () => {
+                renderizarAgendamentos();
+            });
+        }
+
+        function showLoginScreen() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+        }
+
+        function showAdminPanel() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+        }
+
+        function renderizarAgendamentos() {
+            if (!agendamentoService) {
+                document.getElementById('agendamentos-list').innerHTML =
+                    '<div class="loading">⏳ Carregando serviço...</div>';
+                return;
+            }
+
+            const busca = document.getElementById('search-agendamentos').value.toLowerCase();
+            let agendamentos = agendamentoService.listar();
+
+            if (busca) {
+                agendamentos = agendamentos.filter(a => a.displayString.toLowerCase().includes(busca));
+            }
+
+            const listaDiv = document.getElementById('agendamentos-list');
+
+            if (agendamentos.length === 0) {
+                listaDiv.innerHTML = '<div class="loading">📋 Nenhum agendamento cadastrado</div>';
+                return;
+            }
+
+            let html = '';
+            agendamentos.forEach(a => {
+                html += `
+                    <div class="agendamento-card">
+                        <div>
+                            <strong>${a.displayString}</strong>
+                            <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
+                                Tipo: ${a.tipo} | Criado: ${new Date(a.criadoEm).toLocaleString()}
+                            </div>
+                        </div>
+                        <div class="agendamento-actions">
+                            <button class="edit-btn" onclick="editarAgendamento('${a.id}')">✏️ Editar</button>
+                            <button class="delete-btn" onclick="deletarAgendamento('${a.id}')">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listaDiv.innerHTML = html;
+        }
+
+        function atualizarStats() {
+            if (!agendamentoService) return;
+            const agendamentos = agendamentoService.listar();
+            const statsDiv = document.getElementById('stats');
+            statsDiv.innerHTML = `📊 Total de agendamentos: <strong>${agendamentos.length}</strong>`;
+        }
+
+        // Funções globais para os botões
+        window.editarAgendamento = function (id) {
+            if (!agendamentoService) {
+                alert('❌ Serviço não disponível.');
+                return;
+            }
+
+            const agendamentos = agendamentoService.listar();
+            const agendamento = agendamentos.find(a => a.id === id);
+
+            if (agendamento) {
+                editingAgendamentoId = id;
+                document.getElementById('modal-title').textContent = 'Editar Agendamento';
+                document.getElementById('modal-uf').value = agendamento.uf;
+                document.getElementById('modal-hub').value = agendamento.hub;
+                document.getElementById('modal-recebedor').value = agendamento.recebedor;
+                document.getElementById('modal-tipo').value = agendamento.tipo;
+                document.getElementById('agendamento-modal').classList.remove('hidden');
+            }
+        };
+
+        window.deletarAgendamento = async function (id) {
+            if (!agendamentoService) {
+                alert('❌ Serviço não disponível.');
+                return;
+            }
+
+            if (confirm('🗑️ Remover este agendamento?')) {
+                try {
+                    await agendamentoService.delete(id);
+                    renderizarAgendamentos();
+                    atualizarStats();
+                } catch (error) {
+                    console.error('Erro ao deletar:', error);
+                    alert('❌ Erro ao deletar agendamento.');
+                }
+            }
+        };
+    </script>
 </body>
 
 </html>

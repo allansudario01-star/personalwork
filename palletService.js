@@ -14,7 +14,6 @@ class PalletService {
             window.db.collection('agendamentos').onSnapshot((snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === 'added' || change.type === 'modified') {
-
                         if (window.renderizarPallets) window.renderizarPallets();
                     }
                 });
@@ -66,7 +65,9 @@ class PalletService {
             bipado: false,
             palletsVinculados: [],
 
-            palletPrincipalId: null
+            palletPrincipalId: null,
+
+            agendamentoMarcado: false
 
         };
 
@@ -90,7 +91,8 @@ class PalletService {
                 recebedor: 'DIVERSOS',
                 hub: data.hub.toUpperCase().trim(),
                 estado: data.estado.toUpperCase().trim(),
-                cidade: data.cidade ? data.cidade.toUpperCase().trim() : '',
+                cidade: 'DIVERSOS',
+
                 maxVolumes: null,
                 volumesAtuais: null
             };
@@ -124,7 +126,9 @@ class PalletService {
             ultimaAtualizacao: new Date().toISOString(),
             status: 'ativo',
             volumesAtuais: 0,
-            palletsVinculados: []
+            palletsVinculados: [],
+
+            agendamentoMarcado: palletPrincipal.agendamentoMarcado
 
         };
 
@@ -168,6 +172,22 @@ class PalletService {
         }
     }
 
+    async marcarAgendamento(id, marcado) {
+        const pallet = this.pallets.get(id);
+        if (!pallet || pallet.tipo !== 'VOLUMETRIA_ALTA') return;
+
+        pallet.agendamentoMarcado = marcado;
+        this.saveToStorage();
+
+        try {
+            await window.db.collection('pallets').doc(id).update({
+                agendamentoMarcado: marcado
+            });
+        } catch (e) {
+            console.log('Offline: marcação de agendamento salva localmente');
+        }
+    }
+
     async finalizar(id, bipado = false) {
         const pallet = this.pallets.get(id);
         if (!pallet) return;
@@ -188,7 +208,6 @@ class PalletService {
                 if (anexo && anexo.status === 'ativo') {
                     anexo.finalizadoEm = new Date().toISOString();
                     anexo.bipado = bipado;
-
                     anexo.status = 'finalizado';
                     this.finalizados.set(anexoId, anexo);
                     this.pallets.delete(anexoId);
@@ -268,14 +287,28 @@ class PalletService {
     limparHistorico() {
         this.finalizados.clear();
         this.saveFinalizadosToStorage();
-        try {
-
-        } catch (e) { }
     }
 
     obterTotalPalletsGrupo(palletPrincipal) {
         if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') return 1;
         return 1 + palletPrincipal.palletsVinculados.length;
+    }
+
+    obterIndiceNoGrupo(pallet) {
+        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
+        if (!pallet.palletPrincipalId) {
+
+            return 1;
+        } else {
+
+            const principal = this.pallets.get(pallet.palletPrincipalId);
+            if (principal) {
+                const index = principal.palletsVinculados.indexOf(pallet.id);
+                return index + 2;
+
+            }
+        }
+        return 1;
     }
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
@@ -289,12 +322,14 @@ class PalletService {
         let notaFiscalDisplay = pallet.notaFiscal;
         let recebedorDisplay = pallet.recebedor;
         let hubDisplay = pallet.hub;
-        let ufCidadeDisplay = `${pallet.estado}${pallet.cidade ? ` - ${pallet.cidade}` : ''}`;
+        let ufCidadeDisplay = '';
         let volumesDisplay = '';
         let palletsDisplay = '';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
             tituloPallet = 'PALLET - VOLUMETRIA ALTA';
+            ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
+
             volumesDisplay = `
                 <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
                     <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
@@ -304,12 +339,14 @@ class PalletService {
                     </div>
                 </div>
             `;
+
             const totalPallets = this.obterTotalPalletsGrupo(pallet);
+            const indiceAtual = this.obterIndiceNoGrupo(pallet);
             palletsDisplay = `
                 <div style="text-align: center; background: #f0f0f0; padding: 10px; border-radius: 8px; border: 1px solid #7f8c8d;">
                     <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">PALLETS</div>
                     <div>
-                        <span style="font-size: 32px; font-weight: bold;">${totalPallets}</span>
+                        <span style="font-size: 32px; font-weight: bold;">${indiceAtual}</span>
                         <span style="font-size: 24px;"> / ${totalPallets}</span>
                     </div>
                 </div>
@@ -317,6 +354,7 @@ class PalletService {
         } else {
 
             tituloPallet = 'PALLET - DIVERSOS';
+            ufCidadeDisplay = `${pallet.estado} - DIVERSOS`;
             volumesDisplay = `
                 <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
                     <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
@@ -327,6 +365,27 @@ class PalletService {
             `;
 
         }
+
+        const agendamentoChecked = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
+
+        const agendamentoSection = pallet.tipo === 'VOLUMETRIA_ALTA' ? `
+            <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 15px; margin-bottom: 12px;">
+                <div>
+                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">VINCULAR NF:</div>
+                    <div style="border-bottom: 2px solid #333; height: 24px;"></div>
+                </div>
+                <div style="display: flex; gap: 25px; align-items: center;">
+                    <div style="font-size: 14px;">
+                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
+                    </div>
+                    <div style="font-size: 14px;">
+                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${!agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                        <span style="vertical-align: middle; font-weight: bold;">BOLSÃO</span>
+                    </div>
+                </div>
+            </div>
+        ` : '';
 
         return `
         <div style="
@@ -436,22 +495,7 @@ class PalletService {
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 15px; margin-bottom: 12px;">
-                <div>
-                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">VINCULAR NF:</div>
-                    <div style="border-bottom: 2px solid #333; height: 24px;"></div>
-                </div>
-                <div style="display: flex; gap: 25px; align-items: center;">
-                    <div style="font-size: 14px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${isAgendado ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
-                    </div>
-                    <div style="font-size: 14px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${!isAgendado ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">BOLSÃO</span>
-                    </div>
-                </div>
-            </div>
+            ${agendamentoSection}
 
             <div>
                 <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">OBSERVAÇÃO:</div>

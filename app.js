@@ -76,6 +76,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  function resetFormularioVolumetriaAlta() {
+    document.getElementById('nf').value = '';
+    document.getElementById('recebedor').value = '';
+    document.getElementById('hub').value = '';
+    document.getElementById('estado').value = '';
+    document.getElementById('cidade').value = '';
+    document.getElementById('maxVolumes').value = '';
+  }
+
+  function resetFormularioDiversos() {
+    document.getElementById('hub-diversos').value = '';
+    document.getElementById('estado-diversos').value = '';
+  }
+
   function configurarBotoes() {
 
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
@@ -84,10 +98,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('tipo-volumetria-alta').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
+      resetFormularioVolumetriaAlta();
+
       document.getElementById('pallet-modal').classList.remove('hidden');
     });
     document.getElementById('tipo-diversos').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
+      resetFormularioDiversos();
+
       document.getElementById('pallet-diversos-modal').classList.remove('hidden');
     });
     document.getElementById('cancel-tipo-modal').addEventListener('click', () => {
@@ -114,7 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const dados = {
         hub: document.getElementById('hub-diversos').value,
         estado: document.getElementById('estado-diversos').value,
-        cidade: document.getElementById('cidade-diversos').value
+        cidade: ''
+
       };
       await window.palletService.create(dados, 'DIVERSOS');
       document.getElementById('pallet-diversos-modal').classList.add('hidden');
@@ -187,7 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       const pallet = window.palletService.pallets.get(window.palletAImprimir);
       if (pallet) {
-        const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+        const isAgendado = pallet.agendamentoMarcado;
+
         window.palletService.imprimirEtiqueta(pallet, isAgendado, imagemBase64);
       }
       document.getElementById('anexar-imagem-modal').classList.add('hidden');
@@ -196,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('imprimir-sem-imagem').addEventListener('click', () => {
       const pallet = window.palletService.pallets.get(window.palletAImprimir);
       if (pallet) {
-        const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+        const isAgendado = pallet.agendamentoMarcado;
         window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
       }
       document.getElementById('anexar-imagem-modal').classList.add('hidden');
@@ -261,7 +281,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <strong>Recebedor:</strong> ${p.recebedor}<br>
                     <strong>Unidade:</strong> ${p.hub}<br>
                     <strong>UF:</strong> ${p.estado}<br>
-                    <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}
+                    <strong>Cidade:</strong> ${p.cidade}<br>
+                    <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}<br>
+                    <strong>Agendamento:</strong>
+                    <label style="display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
+                        <input type="checkbox" id="marcar-agendamento" ${p.agendamentoMarcado ? 'checked' : ''}>
+                        Marcar como agendado
+                    </label>
                 </div>
             `;
       volumeControls.innerHTML = `
@@ -282,12 +308,21 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('manual-volume').value = Math.max(0, atual + valor);
         });
       });
+
+      const checkboxAgendamento = document.getElementById('marcar-agendamento');
+      if (checkboxAgendamento) {
+        checkboxAgendamento.addEventListener('change', async (e) => {
+          await window.palletService.marcarAgendamento(id, e.target.checked);
+          renderizarPallets();
+
+        });
+      }
     } else {
       infoDiv.innerHTML = `
                 <div>
                     <strong>Unidade:</strong> ${p.hub}<br>
                     <strong>UF:</strong> ${p.estado}<br>
-                    <strong>Cidade:</strong> ${p.cidade || 'Não informada'}<br>
+                    <strong>Cidade:</strong> DIVERSOS<br>
                     <strong>Volumes:</strong> DIVERSOS
                 </div>
             `;
@@ -324,8 +359,19 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   window.imprimirPallet = function (id) {
+    const pallet = window.palletService.pallets.get(id);
+    if (!pallet) return;
+
     window.palletAImprimir = id;
-    document.getElementById('anexar-imagem-modal').classList.remove('hidden');
+
+    if (pallet.tipo === 'VOLUMETRIA_ALTA') {
+      document.getElementById('anexar-imagem-modal').classList.remove('hidden');
+    } else {
+
+      const isAgendado = false;
+
+      window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
+    }
   };
 
   window.excluirPallet = async function (id) {
@@ -338,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
   window.reimprimirEtiqueta = function (id) {
     const pallet = window.palletService.finalizados.get(id);
     if (!pallet) return;
-    const isAgendado = window.agendamentoService.verificar(pallet.recebedor, pallet.hub, pallet.estado);
+    const isAgendado = pallet.tipo === 'VOLUMETRIA_ALTA' ? pallet.agendamentoMarcado : false;
     window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
   };
 
@@ -353,16 +399,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     let html = '';
-    pallets.forEach(p => {
-      const agendado = window.agendamentoService.verificar(p.recebedor, p.hub, p.estado);
+
+    const palletsPrincipais = pallets.filter(p => !p.palletPrincipalId);
+
+    for (const p of palletsPrincipais) {
+
+      const anexos = pallets.filter(a => a.palletPrincipalId === p.id);
       const isDiversos = p.tipo === 'DIVERSOS';
+      const agendado = p.tipo === 'VOLUMETRIA_ALTA' ? p.agendamentoMarcado : false;
       const cardClass = `pallet-card ${agendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''}`;
 
       html += `
-                <div class="${cardClass}">
+                <div class="${cardClass}" style="margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <span class="nf-tag">${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
-                        ${agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 NÃO AGENDADO</span>'}
+                        ${p.tipo === 'VOLUMETRIA_ALTA' ? (agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 BOLSÃO</span>') : ''}
                     </div>
 
                     <div class="info-grid">
@@ -395,9 +446,39 @@ document.addEventListener('DOMContentLoaded', function () {
                         <button onclick="imprimirPallet('${p.id}')">Imprimir</button>
                         <button onclick="excluirPallet('${p.id}')">Excluir</button>
                     </div>
-                </div>
             `;
-    });
+
+      if (anexos.length > 0) {
+        html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px dashed #ccc;">`;
+        html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados:</div>`;
+        for (const anexo of anexos) {
+          const agendadoAnexo = anexo.tipo === 'VOLUMETRIA_ALTA' ? anexo.agendamentoMarcado : false;
+          html += `
+                        <div class="pallet-card anexado" style="margin-bottom: 10px; background: #f9f9f9; border-left: 4px solid #f39c12;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span class="nf-tag" style="font-size: 16px;">Anexado - NF ${anexo.notaFiscal}</span>
+                                ${anexo.tipo === 'VOLUMETRIA_ALTA' ? (agendadoAnexo ? '<span class="agendado-badge" style="font-size: 10px;">📅 AGENDADO</span>' : '<span class="nao-agendado-badge" style="font-size: 10px;">📦 BOLSÃO</span>') : ''}
+                            </div>
+                            <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div class="info-item"><small>Recebedor</small><strong>${anexo.recebedor}</strong></div>
+                                <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
+                                <div class="info-item"><small>Volumes</small><strong>${anexo.volumesAtuais} / ${anexo.maxVolumes}</strong></div>
+                            </div>
+                            <div class="card-actions" style="margin-top: 10px;">
+                                <button onclick="abrirModalAjustar('${anexo.id}')" style="padding: 8px; font-size: 12px;">Ajustar</button>
+                                <button onclick="finalizarPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Finalizar</button>
+                                <button onclick="imprimirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Imprimir</button>
+                                <button onclick="excluirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+        }
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+    }
+
     lista.innerHTML = html;
   }
 

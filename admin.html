@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Admin - Pallet System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .login-container button:hover {
+            background: #2980b9;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .agendamento-card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .agendamento-actions button {
+            padding: 8px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background: #f39c12;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .import-area {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            border: 2px dashed #bdc3c7;
+        }
+
+        .import-area input {
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            background: #7f8c8d;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .filters {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .filters input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .stats {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="offline-banner" class="offline hidden">⚠️ Modo offline</div>
+
+    <div id="login-screen" class="login-container">
+        <h2>🔐 Painel Administrativo</h2>
+        <form id="login-form">
+            <input type="email" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Senha" required>
+            <button type="submit">Entrar</button>
+            <div id="login-error" class="error-message"></div>
+        </form>
+    </div>
+
+    <div id="admin-panel" style="padding: 20px; max-width: 1200px; margin: 0 auto; display: none;">
+        <div class="admin-header">
+            <h1>📋 Gestão de Agendamentos</h1>
+            <button class="logout-btn" id="logout-btn">Sair</button>
+        </div>
+
+        <div class="stats" id="stats">
+            Carregando...
+        </div>
+
+        <div class="import-area">
+            <h3>📥 Importar Agendamentos</h3>
+            <p>Selecione um arquivo CSV com os agendamentos (formato: UF,Hub,Recebedor,Tipo)</p>
+            <input type="file" id="import-csv" accept=".csv, .txt">
+            <button id="import-btn" class="btn-primary" style="margin-top: 10px;">Importar</button>
+        </div>
+
+        <div class="filters">
+            <input type="text" id="search-agendamentos" placeholder="🔍 Pesquisar agendamentos...">
+            <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
+            <button id="clear-all-btn" class="btn-secondary" style="background: #e74c3c;">🗑️ LIMPAR TUDO</button>
+        </div>
+
+        <div id="agendamentos-list"></div>
+    </div>
+
+    <div id="agendamento-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Novo Agendamento</h3>
+            <form id="agendamento-form-modal">
+                <input type="text" id="modal-uf" placeholder="UF" maxlength="2" required>
+                <input type="text" id="modal-hub" placeholder="Hub" required>
+                <input type="text" id="modal-recebedor" placeholder="Recebedor" required>
+                <input type="text" id="modal-tipo" placeholder="Tipo" value="PADRÃO">
+                <div class="modal-actions">
+                    <button type="submit" class="save-btn">Salvar</button>
+                    <button type="button" id="close-modal-btn" class="cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="agendamentoService.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

@@ -10,9 +10,12 @@ document.addEventListener('DOMContentLoaded', function () {
     appId: "1:395589767694:web:59e6797705a3e89fdca25f"
   };
 
-  firebase.initializeApp(firebaseConfig);
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
   window.db = firebase.firestore();
+  window.auth = firebase.auth();
 
   console.log('✅ Firebase conectado!');
 });

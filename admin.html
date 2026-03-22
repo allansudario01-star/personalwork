@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
+        /* Estilos adicionais para a página de admin */
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -200,6 +201,7 @@
             margin: 20px 0;
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .filters input {
@@ -220,12 +222,19 @@
         .hidden {
             display: none;
         }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 
 <body>
     <div id="offline-banner" class="offline hidden">⚠️ Modo offline</div>
 
+    <!-- Tela de Login -->
     <div id="login-screen" class="login-container">
         <h2>🔐 Painel Administrativo</h2>
         <form id="login-form">
@@ -236,6 +245,7 @@
         </form>
     </div>
 
+    <!-- Painel Admin (aparece após login) -->
     <div id="admin-panel" style="padding: 20px; max-width: 1200px; margin: 0 auto; display: none;">
         <div class="admin-header">
             <h1>📋 Gestão de Agendamentos</h1>
@@ -259,9 +269,12 @@
             <button id="clear-all-btn" class="btn-secondary" style="background: #e74c3c;">🗑️ LIMPAR TUDO</button>
         </div>
 
-        <div id="agendamentos-list"></div>
+        <div id="agendamentos-list">
+            <div class="loading">📋 Carregando agendamentos...</div>
+        </div>
     </div>
 
+    <!-- Modal para criar/editar agendamento -->
     <div id="agendamento-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-title">Novo Agendamento</h3>
@@ -278,6 +291,7 @@
         </div>
     </div>
 
+    <!-- CARREGAMENTO DOS SCRIPTS NA ORDEM CORRETA -->
     <script src="firebase-config.js"></script>
     <script src="agendamentoService.js"></script>
     <script src="admin.js"></script>

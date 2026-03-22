@@ -1,27 +1,72 @@
+// Estado global
 let currentUser = null;
 let editingAgendamentoId = null;
+let serviceReady = false;
+let retryCount = 0;
+const MAX_RETRIES = 30; // 30 tentativas (15 segundos)
 
+// Aguardar carregamento do DOM
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🔐 Iniciando painel admin...');
 
+    // Aguardar o service carregar
+    waitForService();
+
+    // Configurar eventos de autenticação
     firebase.auth().onAuthStateChanged(function (user) {
         if (user) {
-
             currentUser = user;
             console.log('✅ Usuário logado:', user.email);
             showAdminPanel();
-            carregarAgendamentos();
+            if (serviceReady) {
+                carregarAgendamentos();
+            }
         } else {
-
             showLoginScreen();
         }
     });
 
-    configurarEventos();
+    // Configurar eventos de UI (serão ativados quando o service estiver pronto)
+    configurarEventosQuandoPronto();
 });
 
-function configurarEventos() {
+function waitForService() {
+    if (window.agendamentoService) {
+        console.log('✅ AgendamentoService carregado!');
+        serviceReady = true;
 
+        // Se já está logado, carrega os agendamentos
+        if (currentUser) {
+            carregarAgendamentos();
+        }
+        return;
+    }
+
+    retryCount++;
+    if (retryCount < MAX_RETRIES) {
+        console.log(`⏳ Aguardando agendamentoService... (${retryCount}/${MAX_RETRIES})`);
+        setTimeout(waitForService, 500);
+    } else {
+        console.error('❌ Erro: AgendamentoService não carregou após várias tentativas');
+        document.getElementById('agendamentos-list').innerHTML =
+            '<div style="text-align: center; padding: 50px; color: #e74c3c;">❌ Erro ao carregar serviço. Recarregue a página.</div>';
+    }
+}
+
+function configurarEventosQuandoPronto() {
+    // Verificar periodicamente se o service está pronto
+    const checkAndSetup = setInterval(() => {
+        if (serviceReady && window.agendamentoService) {
+            clearInterval(checkAndSetup);
+            setupEventos();
+        }
+    }, 200);
+}
+
+function setupEventos() {
+    console.log('🎯 Configurando eventos...');
+
+    // Login
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
@@ -31,24 +76,27 @@ function configurarEventos() {
         try {
             errorDiv.textContent = '';
             await firebase.auth().signInWithEmailAndPassword(email, password);
-
         } catch (error) {
             console.error('Erro no login:', error);
             if (error.code === 'auth/user-not-found') {
                 errorDiv.textContent = '❌ Usuário não encontrado';
             } else if (error.code === 'auth/wrong-password') {
                 errorDiv.textContent = '❌ Senha incorreta';
+            } else if (error.code === 'auth/invalid-email') {
+                errorDiv.textContent = '❌ Email inválido';
             } else {
                 errorDiv.textContent = '❌ Erro ao fazer login. Tente novamente.';
             }
         }
     });
 
+    // Logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
         await firebase.auth().signOut();
         showLoginScreen();
     });
 
+    // Criar novo agendamento
     document.getElementById('create-agendamento-btn').addEventListener('click', () => {
         editingAgendamentoId = null;
         document.getElementById('modal-title').textContent = 'Novo Agendamento';
@@ -59,10 +107,12 @@ function configurarEventos() {
         document.getElementById('agendamento-modal').classList.remove('hidden');
     });
 
+    // Fechar modal
     document.getElementById('close-modal-btn').addEventListener('click', () => {
         document.getElementById('agendamento-modal').classList.add('hidden');
     });
 
+    // Salvar agendamento (criar ou editar)
     document.getElementById('agendamento-form-modal').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -71,30 +121,38 @@ function configurarEventos() {
         const recebedor = document.getElementById('modal-recebedor').value;
         const tipo = document.getElementById('modal-tipo').value;
 
+        if (!window.agendamentoService) {
+            alert('❌ Serviço não disponível. Aguarde um momento e tente novamente.');
+            return;
+        }
+
         try {
             if (editingAgendamentoId) {
-
                 await editarAgendamento(editingAgendamentoId, uf, hub, recebedor, tipo);
             } else {
-
                 await window.agendamentoService.create(uf, hub, recebedor, tipo);
             }
 
             document.getElementById('agendamento-modal').classList.add('hidden');
             carregarAgendamentos();
-
         } catch (error) {
             console.error('Erro ao salvar agendamento:', error);
-            alert('Erro ao salvar agendamento. Verifique sua conexão.');
+            alert('❌ Erro ao salvar agendamento. Verifique sua conexão.');
         }
     });
 
+    // Importar CSV
     document.getElementById('import-btn').addEventListener('click', async () => {
+        if (!window.agendamentoService) {
+            alert('❌ Serviço não disponível. Aguarde um momento e tente novamente.');
+            return;
+        }
+
         const fileInput = document.getElementById('import-csv');
         const file = fileInput.files[0];
 
         if (!file) {
-            alert('Selecione um arquivo CSV primeiro!');
+            alert('📁 Selecione um arquivo CSV primeiro!');
             return;
         }
 
@@ -106,25 +164,36 @@ function configurarEventos() {
                 alert(`✅ ${resultados.length} agendamentos importados com sucesso!`);
                 carregarAgendamentos();
                 fileInput.value = '';
-
             } catch (error) {
                 console.error('Erro ao importar:', error);
-                alert('❌ Erro ao importar. Verifique o formato do arquivo CSV.');
+                alert('❌ Erro ao importar. Verifique o formato do arquivo CSV.\n\nFormato esperado:\nUF,Hub,Recebedor,Tipo\nMG,BET,EMPRESA X,PADRÃO');
             }
         };
         reader.readAsText(file);
     });
 
+    // Limpar todos os agendamentos
     document.getElementById('clear-all-btn').addEventListener('click', async () => {
+        if (!window.agendamentoService) {
+            alert('❌ Serviço não disponível. Aguarde um momento e tente novamente.');
+            return;
+        }
+
         if (confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os agendamentos. Tem certeza?')) {
             if (confirm('Última confirmação: TEM CERTEZA ABSOLUTA?')) {
-                window.agendamentoService.limparTodos();
-                carregarAgendamentos();
-                alert('✅ Todos os agendamentos foram removidos!');
+                try {
+                    window.agendamentoService.limparTodos();
+                    carregarAgendamentos();
+                    alert('✅ Todos os agendamentos foram removidos!');
+                } catch (error) {
+                    console.error('Erro ao limpar:', error);
+                    alert('❌ Erro ao limpar agendamentos.');
+                }
             }
         }
     });
 
+    // Buscar agendamentos
     document.getElementById('search-agendamentos').addEventListener('input', () => {
         renderizarAgendamentos();
     });
@@ -141,16 +210,21 @@ function showAdminPanel() {
 }
 
 async function carregarAgendamentos() {
+    if (!window.agendamentoService) {
+        console.log('Aguardando service para carregar agendamentos...');
+        setTimeout(() => carregarAgendamentos(), 500);
+        return;
+    }
+
     try {
-
-        if (!window.agendamentoService) {
-            console.log('Aguardando agendamentoService...');
-            setTimeout(carregarAgendamentos, 500);
-            return;
-        }
-
+        // Escutar mudanças em tempo real
         if (window.db) {
-            window.db.collection('agendamentos').onSnapshot(() => {
+            // Remover listener anterior se existir
+            if (window.agendamentosUnsubscribe) {
+                window.agendamentosUnsubscribe();
+            }
+
+            window.agendamentosUnsubscribe = window.db.collection('agendamentos').onSnapshot(() => {
                 renderizarAgendamentos();
                 atualizarStats();
             });
@@ -160,10 +234,18 @@ async function carregarAgendamentos() {
         atualizarStats();
     } catch (error) {
         console.error('Erro ao carregar agendamentos:', error);
+        document.getElementById('agendamentos-list').innerHTML =
+            '<div style="text-align: center; padding: 50px; color: #e74c3c;">❌ Erro ao carregar agendamentos</div>';
     }
 }
 
 function renderizarAgendamentos() {
+    if (!window.agendamentoService) {
+        document.getElementById('agendamentos-list').innerHTML =
+            '<div class="loading">⏳ Carregando serviço...</div>';
+        return;
+    }
+
     const busca = document.getElementById('search-agendamentos').value.toLowerCase();
     let agendamentos = window.agendamentoService.listar();
 
@@ -185,7 +267,7 @@ function renderizarAgendamentos() {
                 <div>
                     <strong>${a.displayString}</strong>
                     <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
-                        Criado em: ${new Date(a.criadoEm).toLocaleString()}
+                        Tipo: ${a.tipo} | Criado: ${new Date(a.criadoEm).toLocaleString()}
                     </div>
                 </div>
                 <div class="agendamento-actions">
@@ -200,12 +282,20 @@ function renderizarAgendamentos() {
 }
 
 function atualizarStats() {
+    if (!window.agendamentoService) return;
+
     const agendamentos = window.agendamentoService.listar();
     const statsDiv = document.getElementById('stats');
     statsDiv.innerHTML = `📊 Total de agendamentos: <strong>${agendamentos.length}</strong>`;
 }
 
+// Função global para editar
 window.editarAgendamentoUI = function (id) {
+    if (!window.agendamentoService) {
+        alert('❌ Serviço não disponível.');
+        return;
+    }
+
     const agendamentos = window.agendamentoService.listar();
     const agendamento = agendamentos.find(a => a.id === id);
 
@@ -221,21 +311,39 @@ window.editarAgendamentoUI = function (id) {
 };
 
 async function editarAgendamento(id, uf, hub, recebedor, tipo) {
+    if (!window.agendamentoService) {
+        throw new Error('Serviço não disponível');
+    }
 
+    // Para editar, primeiro deletamos o antigo e criamos um novo com os dados atualizados
     await window.agendamentoService.delete(id);
     await window.agendamentoService.create(uf, hub, recebedor, tipo);
 }
 
+// Função global para deletar
 window.deletarAgendamento = async function (id) {
+    if (!window.agendamentoService) {
+        alert('❌ Serviço não disponível.');
+        return;
+    }
+
     if (confirm('🗑️ Remover este agendamento?')) {
-        await window.agendamentoService.delete(id);
-        carregarAgendamentos();
+        try {
+            await window.agendamentoService.delete(id);
+            carregarAgendamentos();
+        } catch (error) {
+            console.error('Erro ao deletar:', error);
+            alert('❌ Erro ao deletar agendamento.');
+        }
     }
 };
 
+// Monitorar conexão
 window.addEventListener('online', () => {
     document.getElementById('offline-banner').classList.add('hidden');
-    carregarAgendamentos();
+    if (currentUser && serviceReady) {
+        carregarAgendamentos();
+    }
 });
 
 window.addEventListener('offline', () => {

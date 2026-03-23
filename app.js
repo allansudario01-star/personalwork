@@ -410,72 +410,74 @@ document.addEventListener('DOMContentLoaded', function () {
       const agendado = p.tipo === 'VOLUMETRIA_ALTA' ? p.agendamentoMarcado : false;
       const cardClass = `pallet-card ${agendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''}`;
 
+      // Calcula o total do grupo para exibir no card principal
+      const totalPalletsGrupo = 1 + anexos.length;
+
       html += `
-                <div class="${cardClass}" style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span class="nf-tag">${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
-                        ${p.tipo === 'VOLUMETRIA_ALTA' ? (agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 BOLSÃO</span>') : ''}
-                    </div>
+            <div class="${cardClass}" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="nf-tag">${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
+                    ${p.tipo === 'VOLUMETRIA_ALTA' ? (agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 BOLSÃO</span>') : ''}
+                </div>
 
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <small>Recebedor</small>
-                            <strong>${p.recebedor}</strong>
-                        </div>
-                        <div class="info-item">
-                            <small>Unidade/UF</small>
-                            <strong>${p.hub} - ${p.estado}</strong>
-                        </div>
-                        ${!isDiversos ? `
-                        <div class="info-item">
-                            <small>Cidade</small>
-                            <strong>${p.cidade}</strong>
-                        </div>
-                        ` : ''}
-                        <div class="info-item">
-                            <small>Volumes</small>
-                            <strong>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais} / ${p.maxVolumes}`}</strong>
-                        </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <small>Recebedor</small>
+                        <strong>${p.recebedor}</strong>
                     </div>
-
-                    ${!isDiversos && p.volumesAtuais >= p.maxVolumes ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
-
-                    <div class="card-actions">
-                        <button onclick="abrirModalAjustar('${p.id}')">Ajustar</button>
-                        <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
-                        ${!isDiversos ? `<button onclick="anexarPallet('${p.id}')">Anexar Pallet</button>` : ''}
-                        <button onclick="imprimirPallet('${p.id}')">Imprimir</button>
-                        <button onclick="excluirPallet('${p.id}')">Excluir</button>
+                    <div class="info-item">
+                        <small>Unidade/UF</small>
+                        <strong>${p.hub} - ${p.estado}</strong>
                     </div>
-            `;
+                    ${!isDiversos ? `
+                    <div class="info-item">
+                        <small>Cidade</small>
+                        <strong>${p.cidade}</strong>
+                    </div>
+                    ` : ''}
+                    <div class="info-item">
+                        <small>Volumes</small>
+                        <strong>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais} / ${p.maxVolumes}`}</strong>
+                    </div>
+                </div>
+
+                ${!isDiversos && p.volumesAtuais >= p.maxVolumes ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
+
+                <div class="card-actions">
+                    <button onclick="abrirModalAjustar('${p.id}')">Ajustar</button>
+                    <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
+                    ${!isDiversos ? `<button onclick="anexarPallet('${p.id}')">Anexar Pallet</button>` : ''}
+                    <button onclick="imprimirPallet('${p.id}')">Imprimir</button>
+                    <button onclick="excluirPallet('${p.id}')">Excluir</button>
+                </div>
+        `;
 
       if (anexos.length > 0) {
-        const totalPallets = 1 + anexos.length;
         html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px dashed #ccc;">`;
-        html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados (${anexos.length + 1}/${totalPallets}):</div>`;
+        html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados (${totalPalletsGrupo} pallets no total):</div>`;
 
-        let index = 2;
+        let index = 2; // Começa em 2 porque o principal é o 1
         for (const anexo of anexos) {
           const agendadoAnexo = anexo.tipo === 'VOLUMETRIA_ALTA' ? anexo.agendamentoMarcado : false;
           html += `
-                        <div class="pallet-card anexado" style="margin-bottom: 10px; background: #f9f9f9; border-left: 4px solid #f39c12;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span class="nf-tag" style="font-size: 16px;">Anexado ${index}/${totalPallets} - NF ${anexo.notaFiscal}</span>
-                                ${anexo.tipo === 'VOLUMETRIA_ALTA' ? (agendadoAnexo ? '<span class="agendado-badge" style="font-size: 10px;">📅 AGENDADO</span>' : '<span class="nao-agendado-badge" style="font-size: 10px;">📦 BOLSÃO</span>') : ''}
-                            </div>
-                            <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div class="info-item"><small>Recebedor</small><strong>${anexo.recebedor}</strong></div>
-                                <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
-                                <div class="info-item"><small>Volumes</small><strong>${anexo.volumesAtuais} / ${anexo.maxVolumes}</strong></div>
-                            </div>
-                            <div class="card-actions" style="margin-top: 10px;">
-                                <button onclick="abrirModalAjustar('${anexo.id}')" style="padding: 8px; font-size: 12px;">Ajustar</button>
-                                <button onclick="finalizarPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Finalizar</button>
-                                <button onclick="imprimirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Imprimir</button>
-                                <button onclick="excluirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Excluir</button>
-                            </div>
+                    <div class="pallet-card anexado" style="margin-bottom: 10px; background: #f9f9f9; border-left: 4px solid #f39c12;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span class="nf-tag" style="font-size: 16px;">Anexado ${index}/${totalPalletsGrupo} - NF ${anexo.notaFiscal}</span>
+                            ${anexo.tipo === 'VOLUMETRIA_ALTA' ? (agendadoAnexo ? '<span class="agendado-badge" style="font-size: 10px;">📅 AGENDADO</span>' : '<span class="nao-agendado-badge" style="font-size: 10px;">📦 BOLSÃO</span>') : ''}
                         </div>
-                    `;
+                        <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="info-item"><small>Recebedor</small><strong>${anexo.recebedor}</strong></div>
+                            <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
+                            <div class="info-item"><small>Volumes</small><strong>${anexo.volumesAtuais} / ${anexo.maxVolumes}</strong></div>
+                        </div>
+                        <div class="card-actions" style="margin-top: 10px;">
+                            <button onclick="abrirModalAjustar('${anexo.id}')" style="padding: 8px; font-size: 12px;">Ajustar</button>
+                            <button onclick="finalizarPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Finalizar</button>
+                            <button onclick="imprimirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Imprimir</button>
+                            <button onclick="excluirPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Excluir</button>
+                        </div>
+                    </div>
+                `;
           index++;
         }
         html += `</div>`;

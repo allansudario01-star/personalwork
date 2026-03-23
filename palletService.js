@@ -315,23 +315,41 @@ class PalletService {
         this.saveFinalizadosToStorage();
     }
 
-    obterTotalPalletsGrupo(palletPrincipal) {
-        if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') return 1;
-        return 1 + (palletPrincipal.palletsVinculados?.length || 0);
+    // CORRIGIDO: Retorna o total de pallets no grupo (principal + anexos)
+    obterTotalPalletsGrupo(pallet) {
+        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
+
+        // Se é um anexo, pega o principal e conta
+        if (pallet.palletPrincipalId) {
+            const principal = this.pallets.get(pallet.palletPrincipalId);
+            if (principal) {
+                return 1 + (principal.palletsVinculados?.length || 0);
+            }
+        }
+
+        // Se é o principal, conta ele + seus anexos
+        return 1 + (pallet.palletsVinculados?.length || 0);
     }
 
+    // CORRIGIDO: Retorna o índice correto do pallet no grupo
     obterIndiceNoGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
 
+        // Se NÃO tem palletPrincipalId, é o principal (índice 1)
         if (!pallet.palletPrincipalId) {
             return 1;
-        } else {
-            const principal = this.pallets.get(pallet.palletPrincipalId);
-            if (principal && principal.palletsVinculados) {
-                const index = principal.palletsVinculados.indexOf(pallet.id);
+        }
+
+        // É um anexo, precisa encontrar sua posição na lista de anexos do principal
+        const principal = this.pallets.get(pallet.palletPrincipalId);
+        if (principal && principal.palletsVinculados) {
+            const index = principal.palletsVinculados.indexOf(pallet.id);
+            // Índice 0 no array = 2º pallet no grupo
+            if (index !== -1) {
                 return index + 2;
             }
         }
+
         return 1;
     }
 

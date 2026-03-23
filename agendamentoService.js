@@ -66,28 +66,32 @@ class AgendamentoService {
     a.uf = (a.uf || '').toUpperCase().trim();
     a.hub = (a.hub || '').toUpperCase().trim();
     a.recebedor = (a.recebedor || '').toUpperCase().trim();
-    a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
+    a.tipo = (a.tipo || '').toUpperCase().trim();
 
-    a.id = a.id || `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
-    a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
+    a.id = a.id || `${a.uf}-${a.hub}-${a.recebedor}${a.tipo ? '-' + a.tipo : ''}`.replace(/\s/g, '_');
+    a.displayString = `${a.uf}/${a.hub}/${a.recebedor}${a.tipo ? '/' + a.tipo : ''}`;
 
     this.agendamentos.set(a.id, a);
   }
 
-  async create(uf, hub, recebedor, tipo = 'PADRÃO') {
+  async create(uf, hub, recebedor, tipo = '') {
     uf = uf.toUpperCase().trim();
     hub = hub.toUpperCase().trim();
     recebedor = recebedor.toUpperCase().trim();
-    tipo = tipo.toUpperCase().trim();
+    tipo = tipo ? tipo.toUpperCase().trim() : '';
 
-    const baseId = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
+    let baseId = `${uf}-${hub}-${recebedor}`;
+    if (tipo) {
+      baseId += `-${tipo}`;
+    }
+    baseId = baseId.replace(/\s/g, '_');
 
     const novo = {
       uf,
       hub,
       recebedor,
-      tipo,
-      displayString: `${uf}/${hub}/${recebedor}/${tipo}`,
+      tipo: tipo || '',
+      displayString: `${uf}/${hub}/${recebedor}${tipo ? '/' + tipo : ''}`,
       criadoEm: new Date().toISOString()
     };
 
@@ -123,17 +127,21 @@ class AgendamentoService {
         const uf = partes[0].toUpperCase();
         const hub = partes[1].toUpperCase();
         const recebedor = partes[2].toUpperCase();
-        const tipo = partes.length >= 4 ? partes[3].toUpperCase() : 'PADRÃO';
+        const tipo = partes.length >= 4 && partes[3] ? partes[3].toUpperCase().trim() : '';
 
-        const id = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
+        let id = `${uf}-${hub}-${recebedor}`;
+        if (tipo) {
+          id += `-${tipo}`;
+        }
+        id = id.replace(/\s/g, '_');
 
         const agendamento = {
           id,
           uf,
           hub,
           recebedor,
-          tipo,
-          displayString: `${uf}/${hub}/${recebedor}/${tipo}`,
+          tipo: tipo,
+          displayString: `${uf}/${hub}/${recebedor}${tipo ? '/' + tipo : ''}`,
           criadoEm: new Date().toISOString()
         };
 

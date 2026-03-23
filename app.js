@@ -481,9 +481,11 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderizarAgendamentos() {
     const busca = document.getElementById('search-agendamentos').value.toLowerCase();
     let agendamentos = window.agendamentoService.listar();
+
     if (busca) {
       agendamentos = agendamentos.filter(a => a.displayString.toLowerCase().includes(busca));
     }
+
     const lista = document.getElementById('agendamentos-list');
 
     if (agendamentos.length === 0) {
@@ -494,13 +496,13 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
     agendamentos.forEach(a => {
       html += `
-                <div class="agendamento-item">
-                    <div class="agendamento-info">
-                        ${a.displayString}
-                        <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
-                    </div>
+            <div class="agendamento-item">
+                <div class="agendamento-info">
+                    ${a.displayString}
+                    <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
                 </div>
-            `;
+            </div>
+        `;
     });
     lista.innerHTML = html;
   }

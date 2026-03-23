@@ -355,226 +355,9 @@
         }
         const db = firebase.firestore();
         const auth = firebase.auth();
+        window.db = db;
 
         console.log('✅ Firebase conectado!');
-
-        // ==================== AGENDAMENTO SERVICE ====================
-        class AgendamentoService {
-            constructor() {
-                this.agendamentos = new Map();
-                this.loadFromStorage();
-                this.setupRealtimeListener();
-            }
-
-            setupRealtimeListener() {
-                if (db) {
-                    db.collection('agendamentos').onSnapshot((snapshot) => {
-                        console.log('📡 Snapshot recebido, documentos:', snapshot.size);
-                        snapshot.docChanges().forEach((change) => {
-                            if (change.type === 'added') {
-                                const a = change.doc.data();
-                                this.processarAgendamento(a);
-                                console.log('➕ Adicionado:', a.displayString);
-                            }
-                            if (change.type === 'modified') {
-                                const a = change.doc.data();
-                                this.agendamentos.set(a.id, a);
-                                this.saveToStorage();
-                                console.log('✏️ Modificado:', a.displayString);
-                            }
-                            if (change.type === 'removed') {
-                                this.agendamentos.delete(change.doc.id);
-                                this.saveToStorage();
-                                console.log('🗑️ Removido:', change.doc.id);
-                            }
-                        });
-                        this.renderizarLista();
-                        this.atualizarStats();
-                    }, (error) => {
-                        console.error('❌ Erro no snapshot:', error);
-                    });
-                }
-            }
-
-            processarAgendamento(a) {
-                a.uf = (a.uf || '').toUpperCase().trim();
-                a.hub = (a.hub || '').toUpperCase().trim();
-                a.recebedor = (a.recebedor || '').toUpperCase().trim();
-                a.tipo = (a.tipo || 'PADRÃO').toUpperCase().trim();
-                a.id = `${a.uf}-${a.hub}-${a.recebedor}-${a.tipo}`.replace(/\s/g, '_');
-                a.displayString = `${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}`;
-                this.agendamentos.set(a.id, a);
-                this.saveToStorage();
-            }
-
-            loadFromStorage() {
-                const saved = localStorage.getItem('agendamentos');
-                if (saved) {
-                    try {
-                        const lista = JSON.parse(saved);
-                        lista.forEach(a => this.processarAgendamento(a));
-                        console.log('📦 Carregado do localStorage:', lista.length);
-                    } catch (e) {
-                        console.log('Erro ao carregar agendamentos:', e);
-                    }
-                }
-            }
-
-            saveToStorage() {
-                const lista = Array.from(this.agendamentos.values());
-                localStorage.setItem('agendamentos', JSON.stringify(lista));
-            }
-
-            async create(uf, hub, recebedor, tipo = 'PADRÃO') {
-                uf = uf.toUpperCase().trim();
-                hub = hub.toUpperCase().trim();
-                recebedor = recebedor.toUpperCase().trim();
-                tipo = tipo.toUpperCase().trim();
-
-                const id = `${uf}-${hub}-${recebedor}-${tipo}`.replace(/\s/g, '_');
-                const novo = {
-                    id,
-                    uf,
-                    hub,
-                    recebedor,
-                    tipo,
-                    displayString: `${uf}/${hub}/${recebedor}/${tipo}`,
-                    criadoEm: new Date().toISOString()
-                };
-
-                this.agendamentos.set(id, novo);
-                this.saveToStorage();
-
-                try {
-                    await db.collection('agendamentos').doc(id).set(novo);
-                    console.log('✅ Criado no Firebase:', id);
-                } catch (e) {
-                    console.log('Offline: agendamento salvo localmente');
-                }
-
-                return novo;
-            }
-
-            async delete(id) {
-                this.agendamentos.delete(id);
-                this.saveToStorage();
-
-                try {
-                    await db.collection('agendamentos').doc(id).delete();
-                    console.log('✅ Deletado do Firebase:', id);
-                } catch (e) {
-                    console.log('Offline: agendamento removido localmente');
-                }
-            }
-
-            async limparTodos() {
-                console.log('🔴 INICIANDO LIMPEZA TOTAL...');
-
-                // 1. Limpar localStorage
-                localStorage.removeItem('agendamentos');
-                this.agendamentos.clear();
-                console.log('✅ localStorage limpo');
-
-                // 2. Apagar tudo do Firebase
-                if (db) {
-                    try {
-                        const snapshot = await db.collection('agendamentos').get();
-                        console.log(`📋 Encontrados ${snapshot.size} documentos no Firebase`);
-
-                        if (snapshot.empty) {
-                            console.log('ℹ️ Firebase já está vazio');
-                            alert('Firebase já estava vazio!');
-                            this.renderizarLista();
-                            this.atualizarStats();
-                            return;
-                        }
-
-                        let deletados = 0;
-                        for (const doc of snapshot.docs) {
-                            await doc.ref.delete();
-                            deletados++;
-                            console.log(`🗑️ Deletado ${deletados}/${snapshot.size}: ${doc.id}`);
-                        }
-
-                        console.log(`✅ ${deletados} documentos deletados do Firebase!`);
-                        alert(`✅ ${deletados} agendamentos removidos com sucesso!\n\nFirebase e localStorage foram completamente limpos.`);
-
-                        // Forçar recarregar a lista
-                        this.renderizarLista();
-                        this.atualizarStats();
-
-                    } catch (error) {
-                        console.error('❌ Erro ao limpar Firebase: ', error);
-                        alert('Erro ao limpar Firebase: ' + error.message);
-                    }
-                }
-            }
-
-            async resetTotal() {
-                console.log('⚠️⚠️⚠️ RESET TOTAL INICIADO ⚠️⚠️⚠️');
-
-                // 1. Limpar localStorage COMPLETAMENTE
-                localStorage.clear();
-                this.agendamentos.clear();
-                console.log('✅ localStorage completamente limpo');
-
-                // 2. Apagar tudo do Firebase
-                if (db) {
-                    try {
-                        const snapshot = await db.collection('agendamentos').get();
-                        console.log(`📋 Encontrados ${snapshot.size} documentos no Firebase`);
-
-                        let deletados = 0;
-                        for (const doc of snapshot.docs) {
-                            await doc.ref.delete();
-                            deletados++;
-                            console.log(`🗑️ Deletado ${deletados}/${snapshot.size}: ${doc.id}`);
-                        }
-
-                        console.log(`✅ ${deletados} documentos deletados do Firebase!`);
-                        alert(`✅ RESET TOTAL COMPLETO!\n\n${deletados} agendamentos foram removidos do Firebase e localStorage.\n\nA página será recarregada em 3 segundos...`);
-
-                        // Recarregar a página após 3 segundos
-                        setTimeout(() => {
-                            location.reload();
-                        }, 3000);
-
-                    } catch (error) {
-                        console.error('❌ Erro ao resetar Firebase: ', error);
-                        alert('Erro ao resetar Firebase: ' + error.message);
-                    }
-                }
-            }
-
-            listar() {
-                return Array.from(this.agendamentos.values());
-            }
-
-            async importarDoExcel(conteudoCSV) {
-                const linhas = conteudoCSV.split('\n');
-                const resultados = [];
-
-                for (let i = 0; i < linhas.length; i++) {
-                    const linha = linhas[i].trim();
-                    if (!linha || linha.startsWith('UF') || linha.startsWith('uf')) continue;
-
-                    const partes = linha.split(',').map(item => item.trim());
-                    let uf, hub, recebedor, tipo = 'PADRÃO';
-
-                    if (partes.length >= 3) {
-                        uf = partes[0];
-                        hub = partes[1];
-                        recebedor = partes[2];
-                        if (partes.length >= 4) tipo = partes[3];
-
-                        const agendamento = await this.create(uf, hub, recebedor, tipo);
-                        resultados.push(agendamento);
-                    }
-                }
-
-                return resultados;
-            }
-        }
 
         // ==================== ADMIN APP ====================
         let currentUser = null;
@@ -712,9 +495,11 @@
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     try {
+                        const startTime = Date.now();
                         const conteudo = event.target.result;
                         const resultados = await agendamentoService.importarDoExcel(conteudo);
-                        alert(`✅ ${resultados.length} agendamentos importados com sucesso!`);
+                        const tempo = ((Date.now() - startTime) / 1000).toFixed(2);
+                        alert(`✅ ${resultados.length} agendamentos importados com sucesso em ${tempo} segundos!`);
                         renderizarAgendamentos();
                         atualizarStats();
                         fileInput.value = '';
@@ -737,6 +522,8 @@
                     if (confirm('Última confirmação: TEM CERTEZA ABSOLUTA?')) {
                         try {
                             await agendamentoService.limparTodos();
+                            renderizarAgendamentos();
+                            atualizarStats();
                         } catch (error) {
                             alert('❌ Erro ao limpar agendamentos.');
                         }
@@ -807,19 +594,19 @@
             let html = '';
             agendamentos.forEach(a => {
                 html += `
-                    <div class="agendamento-card">
-                        <div>
-                            <strong>${a.displayString}</strong>
-                            <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
-                                Tipo: ${a.tipo} | Criado: ${new Date(a.criadoEm).toLocaleString()}
+                        <div class="agendamento-card">
+                            <div>
+                                <strong>${a.displayString}</strong>
+                                <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
+                                    Tipo: ${a.tipo} | Criado: ${new Date(a.criadoEm).toLocaleString()}
+                                </div>
+                            </div>
+                            <div class="agendamento-actions">
+                                <button class="edit-btn" onclick="editarAgendamento('${a.id}')">✏️ Editar</button>
+                                <button class="delete-btn" onclick="deletarAgendamento('${a.id}')">🗑️ Excluir</button>
                             </div>
                         </div>
-                        <div class="agendamento-actions">
-                            <button class="edit-btn" onclick="editarAgendamento('${a.id}')">✏️ Editar</button>
-                            <button class="delete-btn" onclick="deletarAgendamento('${a.id}')">🗑️ Excluir</button>
-                        </div>
-                    </div>
-                `;
+                    `;
             });
 
             listaDiv.innerHTML = html;

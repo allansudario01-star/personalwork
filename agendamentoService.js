@@ -1,13 +1,13 @@
 class AgendamentoService {
   constructor() {
     this.agendamentos = new Map();
-    this.cacheSize = 1000; // Aumentado para 1000 (comporta 163+)
-    this.allLoaded = false; // Flag para saber se já carregou tudo
+    this.cacheSize = 100; // Limite máximo de registros em cache
+    this.lastDoc = null;
+    this.hasNextPage = true;
     this.isLoading = false;
 
     this.loadFromStorage();
     this.setupRealtimeListener();
-    this.carregarTodosDoFirestore(); // Carrega tudo uma vez
   }
 
   // ========== CONFIGURAÇÃO INICIAL ==========
@@ -15,11 +15,11 @@ class AgendamentoService {
   setupRealtimeListener() {
     if (!window.db) return;
 
-    // Usar onSnapshot APENAS para os 100 mais recentes (realtime)
-    // Os outros não precisam de realtime
+    // Usar onSnapshot apenas para documentos ativos recentes
+    // com limit para reduzir reads
     window.db.collection('agendamentos')
       .orderBy('criadoEm', 'desc')
-      .limit(100) // Apenas os 100 mais recentes em tempo real
+      .limit(50) // Limita a 50 documentos em tempo real
       .onSnapshot((snapshot) => {
         snapshot.docChanges().forEach((change) => {
           const data = change.doc.data();
@@ -40,63 +40,6 @@ class AgendamentoService {
       });
   }
 
-  // ========== CARREGAR TODOS OS AGENDAMENTOS ==========
-
-  async carregarTodosDoFirestore() {
-    if (this.allLoaded || this.isLoading) return;
-
-    this.isLoading = true;
-    console.log('📥 Carregando todos os agendamentos do Firestore...');
-
-    try {
-      let lastDoc = null;
-      let hasMore = true;
-      let total = 0;
-      const PAGE_SIZE = 200; // 200 por página para ser mais rápido
-
-      while (hasMore) {
-        let query = window.db.collection('agendamentos')
-          .orderBy('criadoEm', 'desc')
-          .limit(PAGE_SIZE);
-
-        if (lastDoc) {
-          query = query.startAfter(lastDoc);
-        }
-
-        const snapshot = await query.get();
-
-        if (snapshot.empty) {
-          hasMore = false;
-          break;
-        }
-
-        lastDoc = snapshot.docs[snapshot.docs.length - 1];
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          data.id = doc.id;
-          this.processarAgendamento(data);
-          total++;
-        });
-
-        console.log(`📦 Carregados ${total} agendamentos...`);
-      }
-
-      this.allLoaded = true;
-      this.saveToStorage();
-      console.log(`✅ ${this.agendamentos.size} agendamentos carregados com sucesso!`);
-
-      // Atualizar interface
-      if (window.renderizarAgendamentos) window.renderizarAgendamentos();
-      if (window.atualizarStats) window.atualizarStats();
-
-    } catch (error) {
-      console.error('❌ Erro ao carregar agendamentos:', error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
   // ========== PROCESSAMENTO DE DADOS ==========
 
   processarAgendamento(a) {
@@ -111,7 +54,7 @@ class AgendamentoService {
 
     this.agendamentos.set(a.id, a);
 
-    // Controlar tamanho do cache (agora com limite maior)
+    // Controlar tamanho do cache
     if (this.agendamentos.size > this.cacheSize) {
       this.limparCacheAntigo();
     }
@@ -125,6 +68,46 @@ class AgendamentoService {
     const manter = sorted.slice(0, this.cacheSize);
     this.agendamentos.clear();
     manter.forEach(a => this.agendamentos.set(a.id, a));
+  }
+
+  // ========== PAGINAÇÃO ==========
+
+  async carregarMais() {
+    if (this.isLoading || !this.hasNextPage) return;
+
+    this.isLoading = true;
+
+    try {
+      let query = window.db.collection('agendamentos')
+        .orderBy('criadoEm', 'desc')
+        .limit(30); // 30 documentos por página
+
+      if (this.lastDoc) {
+        query = query.startAfter(this.lastDoc);
+      }
+
+      const snapshot = await query.get();
+
+      if (snapshot.empty) {
+        this.hasNextPage = false;
+        return;
+      }
+
+      this.lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        data.id = doc.id;
+        this.processarAgendamento(data);
+      });
+
+      this.saveToStorage();
+
+    } catch (error) {
+      console.error('Erro ao carregar mais:', error);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   // ========== CRUD OPERATIONS ==========
@@ -269,7 +252,6 @@ class AgendamentoService {
       // Limpar cache local
       this.agendamentos.clear();
       this.saveToStorage();
-      this.allLoaded = false; // Resetar flag
 
       console.log(`✅ ${totalDeletados} agendamentos removidos com sucesso!`);
       alert(`✅ ${totalDeletados} agendamentos removidos com sucesso!\n\nFirebase e localStorage foram completamente limpos.`);
@@ -299,9 +281,10 @@ class AgendamentoService {
     if (saved) {
       try {
         const lista = JSON.parse(saved);
-        // Carregar todos do cache (não limitar mais)
-        lista.forEach(a => this.processarAgendamento(a));
-        console.log(`📦 Carregado do localStorage: ${lista.length} registros`);
+        // Limitar ao carregar do cache
+        const limitados = lista.slice(0, this.cacheSize);
+        limitados.forEach(a => this.processarAgendamento(a));
+        console.log(`📦 Carregado do localStorage: ${limitados.length} registros`);
       } catch (e) {
         console.log('Erro ao carregar agendamentos:', e);
       }
@@ -309,9 +292,12 @@ class AgendamentoService {
   }
 
   saveToStorage() {
-    // Armazenar TODOS os registros (já que agora são até 1000)
-    const lista = Array.from(this.agendamentos.values());
-    localStorage.setItem('agendamentos', JSON.stringify(lista));
+    // Armazenar apenas os registros mais recentes
+    const sorted = Array.from(this.agendamentos.values())
+      .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+
+    const toStore = sorted.slice(0, this.cacheSize);
+    localStorage.setItem('agendamentos', JSON.stringify(toStore));
   }
 
   // ========== CONSULTAS ==========
@@ -325,7 +311,7 @@ class AgendamentoService {
       );
     }
 
-    // Ordenar por data de criação (mais recentes primeiro)
+    // Ordenar por data de criação
     lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
 
     return lista;
@@ -374,7 +360,6 @@ class AgendamentoService {
     // Limpar localStorage
     localStorage.clear();
     this.agendamentos.clear();
-    this.allLoaded = false;
 
     if (window.db) {
       try {

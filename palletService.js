@@ -1,23 +1,50 @@
 class PalletService {
     constructor() {
         this.pallets = new Map();
-
         this.finalizados = new Map();
-
+        this.agendamentoService = null;
         this.loadFromStorage();
         this.setupRealtimeListener();
     }
 
+    setAgendamentoService(service) {
+        this.agendamentoService = service;
+        this.atualizarStatusAgendamentoEmTodosPallets();
+    }
+
     setupRealtimeListener() {
         if (window.db) {
-
-            window.db.collection('agendamentos').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added' || change.type === 'modified') {
-                        if (window.renderizarPallets) window.renderizarPallets();
-                    }
-                });
+            window.db.collection('agendamentos').onSnapshot(() => {
+                if (window.renderizarPallets) {
+                    this.atualizarStatusAgendamentoEmTodosPallets();
+                    window.renderizarPallets();
+                }
             });
+        }
+    }
+
+    verificarAgendamento(pallet) {
+        if (!this.agendamentoService || pallet.tipo !== 'VOLUMETRIA_ALTA') {
+            return false;
+        }
+
+        const agendamentos = this.agendamentoService.listar();
+        return agendamentos.some(a =>
+            a.uf === pallet.estado &&
+            a.hub === pallet.hub &&
+            a.recebedor === pallet.recebedor
+        );
+    }
+
+    atualizarStatusAgendamentoEmTodosPallets() {
+        for (const [id, pallet] of this.pallets.entries()) {
+            if (pallet.tipo === 'VOLUMETRIA_ALTA') {
+                const isAgendado = this.verificarAgendamento(pallet);
+                if (pallet.agendamentoMarcado !== isAgendado) {
+                    pallet.agendamentoMarcado = isAgendado;
+                    this.saveToStorage();
+                }
+            }
         }
     }
 
@@ -58,17 +85,13 @@ class PalletService {
         const basePallet = {
             id,
             tipo: tipo,
-
             criadoEm: new Date().toISOString(),
             ultimaAtualizacao: new Date().toISOString(),
             status: 'ativo',
             bipado: false,
             palletsVinculados: [],
-
             palletPrincipalId: null,
-
             agendamentoMarcado: false
-
         };
 
         let novo;
@@ -84,7 +107,6 @@ class PalletService {
                 volumesAtuais: 0
             };
         } else {
-
             novo = {
                 ...basePallet,
                 notaFiscal: 'DIVERSOS',
@@ -92,10 +114,13 @@ class PalletService {
                 hub: data.hub.toUpperCase().trim(),
                 estado: data.estado.toUpperCase().trim(),
                 cidade: 'DIVERSOS',
-
                 maxVolumes: null,
                 volumesAtuais: null
             };
+        }
+
+        if (tipo === 'VOLUMETRIA_ALTA') {
+            novo.agendamentoMarcado = this.verificarAgendamento(novo);
         }
 
         this.pallets.set(id, novo);
@@ -127,13 +152,14 @@ class PalletService {
             status: 'ativo',
             volumesAtuais: 0,
             palletsVinculados: [],
-
             agendamentoMarcado: palletPrincipal.agendamentoMarcado
-
         };
 
         this.pallets.set(novoId, palletAnexado);
 
+        if (!palletPrincipal.palletsVinculados) {
+            palletPrincipal.palletsVinculados = [];
+        }
         palletPrincipal.palletsVinculados.push(novoId);
         this.pallets.set(idPalletPrincipal, palletPrincipal);
 
@@ -194,7 +220,7 @@ class PalletService {
 
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
-            if (principal) {
+            if (principal && principal.palletsVinculados) {
                 const index = principal.palletsVinculados.indexOf(id);
                 if (index > -1) principal.palletsVinculados.splice(index, 1);
                 this.pallets.set(principal.id, principal);
@@ -202,7 +228,7 @@ class PalletService {
             }
         }
 
-        if (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.palletsVinculados.length > 0) {
+        if (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.palletsVinculados && pallet.palletsVinculados.length > 0) {
             for (const anexoId of pallet.palletsVinculados) {
                 const anexo = this.pallets.get(anexoId);
                 if (anexo && anexo.status === 'ativo') {
@@ -239,7 +265,7 @@ class PalletService {
 
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
-            if (principal) {
+            if (principal && principal.palletsVinculados) {
                 const index = principal.palletsVinculados.indexOf(id);
                 if (index > -1) principal.palletsVinculados.splice(index, 1);
                 this.pallets.set(principal.id, principal);
@@ -260,7 +286,7 @@ class PalletService {
         let lista = Array.from(this.pallets.values());
 
         if (buscaNF) {
-            lista = lista.filter(p => p.notaFiscal?.includes(buscaNF));
+            lista = lista.filter(p => p.notaFiscal?.includes(buscaNF.toUpperCase()));
         }
 
         return lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
@@ -272,10 +298,10 @@ class PalletService {
         if (busca) {
             const buscaUpper = busca.toUpperCase();
             lista = lista.filter(p =>
-                p.notaFiscal?.includes(busca) ||
-                p.recebedor?.includes(buscaUpper) ||
-                p.hub?.includes(buscaUpper) ||
-                p.estado?.includes(buscaUpper)
+                p.notaFiscal?.toUpperCase().includes(buscaUpper) ||
+                p.recebedor?.toUpperCase().includes(buscaUpper) ||
+                p.hub?.toUpperCase().includes(buscaUpper) ||
+                p.estado?.toUpperCase().includes(buscaUpper)
             );
         }
 
@@ -291,21 +317,19 @@ class PalletService {
 
     obterTotalPalletsGrupo(palletPrincipal) {
         if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') return 1;
-        return 1 + palletPrincipal.palletsVinculados.length;
+        return 1 + (palletPrincipal.palletsVinculados?.length || 0);
     }
 
     obterIndiceNoGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
-        if (!pallet.palletPrincipalId) {
 
+        if (!pallet.palletPrincipalId) {
             return 1;
         } else {
-
             const principal = this.pallets.get(pallet.palletPrincipalId);
-            if (principal) {
+            if (principal && principal.palletsVinculados) {
                 const index = principal.palletsVinculados.indexOf(pallet.id);
                 return index + 2;
-
             }
         }
         return 1;
@@ -352,7 +376,6 @@ class PalletService {
                 </div>
             `;
         } else {
-
             tituloPallet = 'PALLET - DIVERSOS';
             ufCidadeDisplay = `${pallet.estado} - DIVERSOS`;
             volumesDisplay = `
@@ -363,7 +386,6 @@ class PalletService {
                     </div>
                 </div>
             `;
-
         }
 
         const agendamentoChecked = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
@@ -377,11 +399,15 @@ class PalletService {
                 <div style="display: flex; gap: 25px; align-items: center;">
                     <div style="font-size: 14px;">
                         <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
+                        <span style="vertical-align: middle; font-weight: bold;">AGENDAMENTO</span>
                     </div>
                     <div style="font-size: 14px;">
                         <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${!agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
                         <span style="vertical-align: middle; font-weight: bold;">BOLSÃO</span>
+                    </div>
+                    <div style="font-size: 14px;">
+                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"></span>
+                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
                     </div>
                 </div>
             </div>
@@ -469,6 +495,8 @@ class PalletService {
                 </div>
             </div>
 
+            ${agendamentoSection}
+
             <div style="margin-bottom: 15px; border-top: 2px solid #333; padding-top: 8px;">
                 <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">VIAGEM</div>
 
@@ -494,8 +522,6 @@ class PalletService {
                     </div>
                 </div>
             </div>
-
-            ${agendamentoSection}
 
             <div>
                 <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">OBSERVAÇÃO:</div>
@@ -546,10 +572,6 @@ class PalletService {
                         }
                         button {
                             display: none;
-                        }
-                        .checkbox-filled {
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
                         }
                     }
                 </style>

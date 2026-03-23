@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
   window.palletService = new PalletService();
   window.agendamentoService = new AgendamentoService();
 
+  // Vincular os serviços
+  window.palletService.setAgendamentoService(window.agendamentoService);
+
   configurarInterface();
   configurarTabs();
   configurarBotoes();
@@ -91,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarBotoes() {
-
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.remove('hidden');
     });
@@ -99,15 +101,15 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('tipo-volumetria-alta').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
       resetFormularioVolumetriaAlta();
-
       document.getElementById('pallet-modal').classList.remove('hidden');
     });
+
     document.getElementById('tipo-diversos').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
       resetFormularioDiversos();
-
       document.getElementById('pallet-diversos-modal').classList.remove('hidden');
     });
+
     document.getElementById('cancel-tipo-modal').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
     });
@@ -133,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function () {
         hub: document.getElementById('hub-diversos').value,
         estado: document.getElementById('estado-diversos').value,
         cidade: ''
-
       };
       await window.palletService.create(dados, 'DIVERSOS');
       document.getElementById('pallet-diversos-modal').classList.add('hidden');
@@ -143,9 +144,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('close-modal').addEventListener('click', () => {
       document.getElementById('pallet-modal').classList.add('hidden');
     });
+
     document.getElementById('close-diversos-modal').addEventListener('click', () => {
       document.getElementById('pallet-diversos-modal').classList.add('hidden');
     });
+
     document.getElementById('close-ajustar-modal').addEventListener('click', () => {
       document.getElementById('ajustar-modal').classList.add('hidden');
     });
@@ -153,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('search-nf').addEventListener('input', debounce(renderizarPallets, 300));
     document.getElementById('search-agendamentos').addEventListener('input', debounce(renderizarAgendamentos, 300));
     document.getElementById('search-finalizados')?.addEventListener('input', debounce(renderizarFinalizados, 300));
+
     document.getElementById('clear-history')?.addEventListener('click', () => {
       if (confirm('⚠️ Limpar todo o histórico de pallets finalizados?')) {
         window.palletService.limparHistorico();
@@ -190,9 +194,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('confirm-finalizar-sim').addEventListener('click', async () => {
       await finalizarPalletComConfirmacao(window.palletAtual, true);
     });
+
     document.getElementById('confirm-finalizar-nao').addEventListener('click', async () => {
       await finalizarPalletComConfirmacao(window.palletAtual, false);
     });
+
     document.getElementById('cancel-finalizar').addEventListener('click', () => {
       document.getElementById('finalizar-modal').classList.add('hidden');
     });
@@ -207,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const pallet = window.palletService.pallets.get(window.palletAImprimir);
       if (pallet) {
         const isAgendado = pallet.agendamentoMarcado;
-
         window.palletService.imprimirEtiqueta(pallet, isAgendado, imagemBase64);
       }
       document.getElementById('anexar-imagem-modal').classList.add('hidden');
@@ -250,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarModals() {
-
+    // Modals já configurados
   }
 
   function configurarMonitorConexao() {
@@ -314,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function () {
         checkboxAgendamento.addEventListener('change', async (e) => {
           await window.palletService.marcarAgendamento(id, e.target.checked);
           renderizarPallets();
-
         });
       }
     } else {
@@ -367,9 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (pallet.tipo === 'VOLUMETRIA_ALTA') {
       document.getElementById('anexar-imagem-modal').classList.remove('hidden');
     } else {
-
       const isAgendado = false;
-
       window.palletService.imprimirEtiqueta(pallet, isAgendado, null);
     }
   };
@@ -403,7 +405,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const palletsPrincipais = pallets.filter(p => !p.palletPrincipalId);
 
     for (const p of palletsPrincipais) {
-
       const anexos = pallets.filter(a => a.palletPrincipalId === p.id);
       const isDiversos = p.tipo === 'DIVERSOS';
       const agendado = p.tipo === 'VOLUMETRIA_ALTA' ? p.agendamentoMarcado : false;
@@ -449,14 +450,17 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
 
       if (anexos.length > 0) {
+        const totalPallets = 1 + anexos.length;
         html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px dashed #ccc;">`;
-        html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados:</div>`;
+        html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados (${anexos.length + 1}/${totalPallets}):</div>`;
+
+        let index = 2;
         for (const anexo of anexos) {
           const agendadoAnexo = anexo.tipo === 'VOLUMETRIA_ALTA' ? anexo.agendamentoMarcado : false;
           html += `
                         <div class="pallet-card anexado" style="margin-bottom: 10px; background: #f9f9f9; border-left: 4px solid #f39c12;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span class="nf-tag" style="font-size: 16px;">Anexado - NF ${anexo.notaFiscal}</span>
+                                <span class="nf-tag" style="font-size: 16px;">Anexado ${index}/${totalPallets} - NF ${anexo.notaFiscal}</span>
                                 ${anexo.tipo === 'VOLUMETRIA_ALTA' ? (agendadoAnexo ? '<span class="agendado-badge" style="font-size: 10px;">📅 AGENDADO</span>' : '<span class="nao-agendado-badge" style="font-size: 10px;">📦 BOLSÃO</span>') : ''}
                             </div>
                             <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -472,6 +476,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
                     `;
+          index++;
         }
         html += `</div>`;
       }

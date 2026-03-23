@@ -4,22 +4,17 @@ class AgendamentoService {
     this.carregando = false;
 
     this.loadFromStorage();
-    this.carregarTodosDoFirestore(); // Carrega TUDO na inicialização
+    this.carregarTodosDoFirestore();
     this.setupRealtimeListener();
   }
-
-  // ========== CARREGAR TODOS OS AGENDAMENTOS ==========
 
   async carregarTodosDoFirestore() {
     if (this.carregando) return;
 
     this.carregando = true;
-    console.log('📥 Carregando TODOS os agendamentos...');
 
     try {
       const snapshot = await window.db.collection('agendamentos').get();
-
-      console.log(`📦 Encontrados ${snapshot.size} agendamentos no Firebase`);
 
       snapshot.forEach(doc => {
         const data = doc.data();
@@ -28,25 +23,19 @@ class AgendamentoService {
       });
 
       this.saveToStorage();
-      console.log(`✅ ${this.agendamentos.size} agendamentos carregados!`);
 
-      // Atualizar interface
       if (window.renderizarAgendamentos) window.renderizarAgendamentos();
       if (window.atualizarStats) window.atualizarStats();
 
     } catch (error) {
-      console.error('❌ Erro ao carregar agendamentos:', error);
     } finally {
       this.carregando = false;
     }
   }
 
-  // ========== REALTIME APENAS PARA ATUALIZAÇÕES ==========
-
   setupRealtimeListener() {
     if (!window.db) return;
 
-    // Escuta apenas mudanças (não carrega tudo de novo)
     window.db.collection('agendamentos')
       .onSnapshot((snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -54,17 +43,14 @@ class AgendamentoService {
           data.id = change.doc.id;
 
           if (change.type === 'added') {
-            console.log('➕ Novo agendamento adicionado:', data.displayString);
             this.processarAgendamento(data);
           }
 
           if (change.type === 'modified') {
-            console.log('✏️ Agendamento modificado:', data.displayString);
             this.processarAgendamento(data);
           }
 
           if (change.type === 'removed') {
-            console.log('🗑️ Agendamento removido:', change.doc.id);
             this.agendamentos.delete(change.doc.id);
           }
         });
@@ -73,11 +59,8 @@ class AgendamentoService {
         if (window.renderizarAgendamentos) window.renderizarAgendamentos();
         if (window.atualizarStats) window.atualizarStats();
       }, (error) => {
-        console.error('Erro no listener:', error);
       });
   }
-
-  // ========== PROCESSAMENTO DE DADOS ==========
 
   processarAgendamento(a) {
     a.uf = (a.uf || '').toUpperCase().trim();
@@ -90,8 +73,6 @@ class AgendamentoService {
 
     this.agendamentos.set(a.id, a);
   }
-
-  // ========== CRUD OPERATIONS ==========
 
   async create(uf, hub, recebedor, tipo = 'PADRÃO') {
     uf = uf.toUpperCase().trim();
@@ -121,12 +102,9 @@ class AgendamentoService {
 
       return novo;
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
       throw error;
     }
   }
-
-  // ========== IMPORTAÇÃO OTIMIZADA ==========
 
   async importarDoExcel(conteudoCSV) {
     const linhas = conteudoCSV.split('\n');
@@ -171,17 +149,13 @@ class AgendamentoService {
       }
     }
 
-    // Atualizar cache
     novosAgendamentos.forEach(a => this.agendamentos.set(a.id, a));
     this.saveToStorage();
 
     return novosAgendamentos;
   }
 
-  // ========== DELEÇÃO EM MASSA ==========
-
   async limparTodos() {
-    console.log('🔴 LIMPANDO TODOS AGENDAMENTOS...');
 
     if (!window.db) return;
 
@@ -200,15 +174,12 @@ class AgendamentoService {
 
       await batch.commit();
 
-      // Limpar cache
       this.agendamentos.clear();
       this.saveToStorage();
 
-      console.log(`✅ ${snapshot.size} agendamentos removidos!`);
       alert(`✅ ${snapshot.size} agendamentos removidos com sucesso!`);
 
     } catch (error) {
-      console.error('❌ Erro ao limpar:', error);
       alert('Erro ao limpar: ' + error.message);
     }
   }
@@ -220,11 +191,8 @@ class AgendamentoService {
     try {
       await window.db.collection('agendamentos').doc(id).delete();
     } catch (e) {
-      console.log('Offline: removido localmente');
     }
   }
-
-  // ========== CACHE ==========
 
   loadFromStorage() {
     const saved = localStorage.getItem('agendamentos');
@@ -232,9 +200,7 @@ class AgendamentoService {
       try {
         const lista = JSON.parse(saved);
         lista.forEach(a => this.processarAgendamento(a));
-        console.log(`📦 Carregado ${lista.length} do localStorage`);
       } catch (e) {
-        console.log('Erro ao carregar:', e);
       }
     }
   }
@@ -243,8 +209,6 @@ class AgendamentoService {
     const lista = Array.from(this.agendamentos.values());
     localStorage.setItem('agendamentos', JSON.stringify(lista));
   }
-
-  // ========== CONSULTAS ==========
 
   listar(busca = '') {
     let lista = Array.from(this.agendamentos.values());
@@ -274,10 +238,7 @@ class AgendamentoService {
     return false;
   }
 
-  // ========== RESET TOTAL ==========
-
   async resetTotal() {
-    console.log('⚠️ RESET TOTAL...');
 
     localStorage.clear();
     this.agendamentos.clear();
@@ -302,7 +263,6 @@ class AgendamentoService {
         setTimeout(() => location.reload(), 2000);
 
       } catch (error) {
-        console.error('Erro:', error);
         alert('Erro ao resetar: ' + error.message);
       }
     }

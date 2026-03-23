@@ -279,7 +279,6 @@
     <div id="offline-banner" class="offline hidden">⚠️ Modo offline - As alterações serão salvas quando a conexão voltar
     </div>
 
-    <!-- Tela de Login -->
     <div id="login-screen" class="login-container">
         <h2>🔐 Painel Administrativo</h2>
         <form id="login-form">
@@ -290,7 +289,6 @@
         </form>
     </div>
 
-    <!-- Painel Admin -->
     <div id="admin-panel" class="admin-panel hidden">
         <div class="admin-header">
             <h1>📋 Gestão de Agendamentos</h1>
@@ -322,7 +320,6 @@
         </div>
     </div>
 
-    <!-- Modal para criar/editar agendamento -->
     <div id="agendamento-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-title">Novo Agendamento</h3>
@@ -340,11 +337,8 @@
     </div>
 
     <script src="firebase-config.js"></script>
-
     <script src="agendamentoService.js"></script>
-
     <script>
-        // ==================== FIREBASE CONFIG ====================
         const firebaseConfig = {
             apiKey: "AIzaSyDyyEsEPJjCw3YAprH03OlWlovATy4SAFI",
             authDomain: "palletsystem-6ff16.firebaseapp.com",
@@ -361,35 +355,23 @@
         const auth = firebase.auth();
         window.db = db;
 
-        console.log('✅ Firebase conectado!');
-
-        console.log('atualizado em: 2024-06-30');
-
-        // ==================== ADMIN APP ====================
         let currentUser = null;
         let editingAgendamentoId = null;
         let agendamentoService = null;
 
-        // Inicializar
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('🔐 Iniciando painel admin...');
 
-            // Criar instância do service
             agendamentoService = new AgendamentoService();
             window.agendamentoService = agendamentoService;
 
-            // Sobrescrever métodos de renderização
             agendamentoService.renderizarLista = renderizarAgendamentos;
             agendamentoService.atualizarStats = atualizarStats;
 
-            // Configurar eventos
             configurarEventos();
 
-            // Monitorar autenticação
             auth.onAuthStateChanged(function (user) {
                 if (user) {
                     currentUser = user;
-                    console.log('✅ Usuário logado:', user.email);
                     showAdminPanel();
                     renderizarAgendamentos();
                     atualizarStats();
@@ -398,7 +380,6 @@
                 }
             });
 
-            // Monitorar conexão
             window.addEventListener('online', () => {
                 document.getElementById('offline-banner').classList.add('hidden');
             });
@@ -408,7 +389,6 @@
         });
 
         function configurarEventos() {
-            // Login
             document.getElementById('login-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
@@ -419,7 +399,6 @@
                     errorDiv.textContent = '';
                     await auth.signInWithEmailAndPassword(email, password);
                 } catch (error) {
-                    console.error('Erro no login:', error);
                     if (error.code === 'auth/user-not-found') {
                         errorDiv.textContent = '❌ Usuário não encontrado';
                     } else if (error.code === 'auth/wrong-password') {
@@ -430,13 +409,11 @@
                 }
             });
 
-            // Logout
             document.getElementById('logout-btn').addEventListener('click', async () => {
                 await auth.signOut();
                 showLoginScreen();
             });
 
-            // Criar novo agendamento
             document.getElementById('create-agendamento-btn').addEventListener('click', () => {
                 editingAgendamentoId = null;
                 document.getElementById('modal-title').textContent = 'Novo Agendamento';
@@ -447,12 +424,10 @@
                 document.getElementById('agendamento-modal').classList.remove('hidden');
             });
 
-            // Fechar modal
             document.getElementById('close-modal-btn').addEventListener('click', () => {
                 document.getElementById('agendamento-modal').classList.add('hidden');
             });
 
-            // Salvar agendamento
             document.getElementById('agendamento-form-modal').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
@@ -478,12 +453,10 @@
                     renderizarAgendamentos();
                     atualizarStats();
                 } catch (error) {
-                    console.error('Erro ao salvar:', error);
                     alert('❌ Erro ao salvar agendamento.');
                 }
             });
 
-            // Importar CSV
             document.getElementById('import-btn').addEventListener('click', async () => {
                 if (!agendamentoService) {
                     alert('❌ Serviço não disponível.');
@@ -510,14 +483,12 @@
                         atualizarStats();
                         fileInput.value = '';
                     } catch (error) {
-                        console.error('Erro ao importar:', error);
                         alert('❌ Erro ao importar. Verifique o formato do arquivo.\n\nFormato esperado:\nUF,Hub,Recebedor,Tipo\nMG,BET,EMPRESA X,PADRÃO');
                     }
                 };
                 reader.readAsText(file);
             });
 
-            // Limpar todos (versão normal)
             document.getElementById('clear-all-btn').addEventListener('click', async () => {
                 if (!agendamentoService) {
                     alert('❌ Serviço não disponível.');
@@ -537,7 +508,6 @@
                 }
             });
 
-            // RESET TOTAL (limpa tudo mesmo)
             document.getElementById('hard-reset-btn').addEventListener('click', async () => {
                 if (!agendamentoService) {
                     alert('❌ Serviço não disponível.');
@@ -560,7 +530,6 @@
                 }
             });
 
-            // Buscar
             document.getElementById('search-agendamentos').addEventListener('input', () => {
                 renderizarAgendamentos();
             });
@@ -625,7 +594,6 @@
             statsDiv.innerHTML = `📊 Total de agendamentos: <strong>${agendamentos.length}</strong>`;
         }
 
-        // Funções globais para os botões
         window.editarAgendamento = function (id) {
             if (!agendamentoService) {
                 alert('❌ Serviço não disponível.');
@@ -658,7 +626,6 @@
                     renderizarAgendamentos();
                     atualizarStats();
                 } catch (error) {
-                    console.error('Erro ao deletar:', error);
                     alert('❌ Erro ao deletar agendamento.');
                 }
             }

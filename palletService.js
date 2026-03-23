@@ -55,7 +55,6 @@ class PalletService {
                 const lista = JSON.parse(saved);
                 lista.forEach(p => this.pallets.set(p.id, p));
             } catch (e) {
-                console.log('Erro ao carregar pallets:', e);
             }
         }
 
@@ -65,7 +64,6 @@ class PalletService {
                 const lista = JSON.parse(finalizados);
                 lista.forEach(p => this.finalizados.set(p.id, p));
             } catch (e) {
-                console.log('Erro ao carregar finalizados:', e);
             }
         }
     }
@@ -129,7 +127,6 @@ class PalletService {
         try {
             await window.db.collection('pallets').doc(id).set(novo);
         } catch (e) {
-            console.log('Offline: salvo só no celular');
         }
 
         return novo;
@@ -138,7 +135,6 @@ class PalletService {
     async anexarPallet(idPalletPrincipal) {
         const palletPrincipal = this.pallets.get(idPalletPrincipal);
         if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') {
-            console.error('Só é possível anexar a pallets de volumetria alta');
             return null;
         }
 
@@ -171,7 +167,6 @@ class PalletService {
                 palletsVinculados: palletPrincipal.palletsVinculados
             });
         } catch (e) {
-            console.log('Offline: anexo salvo localmente');
         }
 
         return palletAnexado;
@@ -194,7 +189,6 @@ class PalletService {
                 ultimaAtualizacao: pallet.ultimaAtualizacao
             });
         } catch (e) {
-            console.log('Offline: update salvo localmente');
         }
     }
 
@@ -239,7 +233,6 @@ class PalletService {
             await window.db.collection('pallets').doc(id).delete();
             await window.db.collection('palletsFinalizados').doc(id).set(pallet);
         } catch (e) {
-            console.log('Offline: finalizado localmente');
         }
     }
 
@@ -262,7 +255,6 @@ class PalletService {
         try {
             await window.db.collection('pallets').doc(id).delete();
         } catch (e) {
-            console.log('Offline: excluído localmente');
         }
     }
 
@@ -495,7 +487,6 @@ class PalletService {
 
             ${agendamentoSection}
 
-            <!-- Campo RESPONSÁVEL -->
             <div style="margin-bottom: 15px; display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap;">
                 <div style="font-weight: bold; font-size: 14px;">RESPONSÁVEL:</div>
                 <div style="border-bottom: 1px solid #999; flex: 1; min-width: 200px; height: 28px;"></div>

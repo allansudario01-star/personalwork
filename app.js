@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('🚀 Iniciando Pallet System Mobile...');
 
   if (typeof window.db === 'undefined') {
-    console.error('❌ ERRO: Firebase não carregado!');
     mostrarErroFirebase();
     return;
   }
@@ -10,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function () {
   window.palletService = new PalletService();
   window.agendamentoService = new AgendamentoService();
 
-  // Vincular os serviços
   window.palletService.setAgendamentoService(window.agendamentoService);
 
   configurarInterface();
@@ -255,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function configurarModals() {
-    // Modals já configurados
   }
 
   function configurarMonitorConexao() {
@@ -280,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function () {
     modalTitle.innerText = isVolumetriaAlta ? `Ajustar Pallet - NF ${p.notaFiscal}` : `Pallet Diversos - ${p.hub} / ${p.estado}`;
 
     if (isVolumetriaAlta) {
-      // REMOVIDO o checkbox de "Marcar como agendado"
       infoDiv.innerHTML = `
             <div>
                 <strong>Número Fiscal:</strong> ${p.notaFiscal}<br>
@@ -399,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const agendado = p.tipo === 'VOLUMETRIA_ALTA' ? p.agendamentoMarcado : false;
       const cardClass = `pallet-card ${agendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''}`;
 
-      // Calcula o total do grupo para exibir no card principal
       const totalPalletsGrupo = 1 + anexos.length;
 
       html += `
@@ -445,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
         html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px dashed #ccc;">`;
         html += `<div style="font-size: 12px; color: #7f8c8d; margin-bottom: 10px;">📎 Pallets anexados (${totalPalletsGrupo} pallets no total):</div>`;
 
-        let index = 2; // Começa em 2 porque o principal é o 1
+        let index = 2;
         for (const anexo of anexos) {
           const agendadoAnexo = anexo.tipo === 'VOLUMETRIA_ALTA' ? anexo.agendamentoMarcado : false;
           html += `

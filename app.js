@@ -280,30 +280,27 @@ document.addEventListener('DOMContentLoaded', function () {
     modalTitle.innerText = isVolumetriaAlta ? `Ajustar Pallet - NF ${p.notaFiscal}` : `Pallet Diversos - ${p.hub} / ${p.estado}`;
 
     if (isVolumetriaAlta) {
+      // REMOVIDO o checkbox de "Marcar como agendado"
       infoDiv.innerHTML = `
-                <div>
-                    <strong>Número Fiscal:</strong> ${p.notaFiscal}<br>
-                    <strong>Recebedor:</strong> ${p.recebedor}<br>
-                    <strong>Unidade:</strong> ${p.hub}<br>
-                    <strong>UF:</strong> ${p.estado}<br>
-                    <strong>Cidade:</strong> ${p.cidade}<br>
-                    <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}<br>
-                    <strong>Agendamento:</strong>
-                    <label style="display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
-                        <input type="checkbox" id="marcar-agendamento" ${p.agendamentoMarcado ? 'checked' : ''}>
-                        Marcar como agendado
-                    </label>
-                </div>
-            `;
+            <div>
+                <strong>Número Fiscal:</strong> ${p.notaFiscal}<br>
+                <strong>Recebedor:</strong> ${p.recebedor}<br>
+                <strong>Unidade:</strong> ${p.hub}<br>
+                <strong>UF:</strong> ${p.estado}<br>
+                <strong>Cidade:</strong> ${p.cidade}<br>
+                <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}<br>
+                <strong>Status:</strong> ${p.agendamentoMarcado ? '📅 AGENDADO' : '📦 BOLSÃO'}<br>
+            </div>
+        `;
       volumeControls.innerHTML = `
-                <button class="btn-volume" data-value="-10">-10</button>
-                <button class="btn-volume" data-value="-5">-5</button>
-                <button class="btn-volume" data-value="-1">-1</button>
-                <input type="number" id="manual-volume" min="0" value="${p.volumesAtuais}" placeholder="0">
-                <button class="btn-volume" data-value="1">+1</button>
-                <button class="btn-volume" data-value="5">+5</button>
-                <button class="btn-volume" data-value="10">+10</button>
-            `;
+            <button class="btn-volume" data-value="-10">-10</button>
+            <button class="btn-volume" data-value="-5">-5</button>
+            <button class="btn-volume" data-value="-1">-1</button>
+            <input type="number" id="manual-volume" min="0" value="${p.volumesAtuais}" placeholder="0">
+            <button class="btn-volume" data-value="1">+1</button>
+            <button class="btn-volume" data-value="5">+5</button>
+            <button class="btn-volume" data-value="10">+10</button>
+        `;
       saveButton.style.display = 'block';
 
       volumeControls.querySelectorAll('.btn-volume').forEach(btn => {
@@ -313,23 +310,15 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('manual-volume').value = Math.max(0, atual + valor);
         });
       });
-
-      const checkboxAgendamento = document.getElementById('marcar-agendamento');
-      if (checkboxAgendamento) {
-        checkboxAgendamento.addEventListener('change', async (e) => {
-          await window.palletService.marcarAgendamento(id, e.target.checked);
-          renderizarPallets();
-        });
-      }
     } else {
       infoDiv.innerHTML = `
-                <div>
-                    <strong>Unidade:</strong> ${p.hub}<br>
-                    <strong>UF:</strong> ${p.estado}<br>
-                    <strong>Cidade:</strong> DIVERSOS<br>
-                    <strong>Volumes:</strong> DIVERSOS
-                </div>
-            `;
+            <div>
+                <strong>Unidade:</strong> ${p.hub}<br>
+                <strong>UF:</strong> ${p.estado}<br>
+                <strong>Cidade:</strong> DIVERSOS<br>
+                <strong>Volumes:</strong> DIVERSOS
+            </div>
+        `;
       volumeControls.innerHTML = `<div style="text-align: center; color: #7f8c8d;">Não é possível ajustar volumes para pallets de diversos.</div>`;
       saveButton.style.display = 'none';
     }

@@ -198,22 +198,6 @@ class PalletService {
         }
     }
 
-    async marcarAgendamento(id, marcado) {
-        const pallet = this.pallets.get(id);
-        if (!pallet || pallet.tipo !== 'VOLUMETRIA_ALTA') return;
-
-        pallet.agendamentoMarcado = marcado;
-        this.saveToStorage();
-
-        try {
-            await window.db.collection('pallets').doc(id).update({
-                agendamentoMarcado: marcado
-            });
-        } catch (e) {
-            console.log('Offline: marcação de agendamento salva localmente');
-        }
-    }
-
     async finalizar(id, bipado = false) {
         const pallet = this.pallets.get(id);
         if (!pallet) return;
@@ -315,11 +299,9 @@ class PalletService {
         this.saveFinalizadosToStorage();
     }
 
-    // CORRIGIDO: Retorna o total de pallets no grupo (principal + anexos)
     obterTotalPalletsGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
 
-        // Se é um anexo, pega o principal e conta
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
             if (principal) {
@@ -327,24 +309,19 @@ class PalletService {
             }
         }
 
-        // Se é o principal, conta ele + seus anexos
         return 1 + (pallet.palletsVinculados?.length || 0);
     }
 
-    // CORRIGIDO: Retorna o índice correto do pallet no grupo
     obterIndiceNoGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
 
-        // Se NÃO tem palletPrincipalId, é o principal (índice 1)
         if (!pallet.palletPrincipalId) {
             return 1;
         }
 
-        // É um anexo, precisa encontrar sua posição na lista de anexos do principal
         const principal = this.pallets.get(pallet.palletPrincipalId);
         if (principal && principal.palletsVinculados) {
             const index = principal.palletsVinculados.indexOf(pallet.id);
-            // Índice 0 no array = 2º pallet no grupo
             if (index !== -1) {
                 return index + 2;
             }
@@ -359,6 +336,7 @@ class PalletService {
         const horaAtual = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const dataEmBranco = '__/__/____';
         const horaEmBranco = '__:__';
+        const linhaEmBranco = '_________________________';
 
         let tituloPallet = 'PALLET';
         let notaFiscalDisplay = pallet.notaFiscal;
@@ -409,23 +387,25 @@ class PalletService {
         const agendamentoChecked = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
 
         const agendamentoSection = pallet.tipo === 'VOLUMETRIA_ALTA' ? `
-            <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 15px; margin-bottom: 12px;">
-                <div>
-                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">VINCULAR NF:</div>
-                    <div style="border-bottom: 2px solid #333; height: 24px;"></div>
-                </div>
-                <div style="display: flex; gap: 25px; align-items: center;">
-                    <div style="font-size: 14px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">AGENDAMENTO</span>
+            <div style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa;">
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px;">VINCULAR NF:</div>
+                        <div style="border-bottom: 1px solid #999; height: 28px;"></div>
                     </div>
-                    <div style="font-size: 14px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; ${!agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">BOLSÃO</span>
-                    </div>
-                    <div style="font-size: 14px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"></span>
-                        <span style="vertical-align: middle; font-weight: bold;">AGUARDANDO DATA DE AGENDAMENTO</span>
+                    <div style="display: flex; gap: 25px; align-items: center; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                            <span style="font-weight: 500;">AGENDAMENTO</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${!agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                            <span style="font-weight: 500;">BOLSÃO</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px;"></span>
+                            <span style="font-weight: 500;">AGUARDANDO DATA DE AGENDAMENTO</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -514,6 +494,12 @@ class PalletService {
             </div>
 
             ${agendamentoSection}
+
+            <!-- Campo RESPONSÁVEL -->
+            <div style="margin-bottom: 15px; display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap;">
+                <div style="font-weight: bold; font-size: 14px;">RESPONSÁVEL:</div>
+                <div style="border-bottom: 1px solid #999; flex: 1; min-width: 200px; height: 28px;"></div>
+            </div>
 
             <div style="margin-bottom: 15px; border-top: 2px solid #333; padding-top: 8px;">
                 <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">VIAGEM</div>

@@ -89,7 +89,8 @@ class PalletService {
             bipado: false,
             palletsVinculados: [],
             palletPrincipalId: null,
-            agendamentoMarcado: false
+            agendamentoMarcado: false,
+            observacao: ''
         };
 
         let novo;
@@ -190,6 +191,26 @@ class PalletService {
             });
         } catch (e) {
         }
+    }
+
+    async salvarObservacao(id, observacao) {
+        const pallet = this.pallets.get(id);
+        if (!pallet) return;
+
+        pallet.observacao = observacao ? observacao.trim() : '';
+        pallet.ultimaAtualizacao = new Date().toISOString();
+
+        this.saveToStorage();
+
+        try {
+            await window.db.collection('pallets').doc(id).update({
+                observacao: pallet.observacao,
+                ultimaAtualizacao: pallet.ultimaAtualizacao
+            });
+        } catch (e) {
+        }
+
+        return pallet.observacao;
     }
 
     async finalizar(id, bipado = false) {
@@ -322,8 +343,6 @@ class PalletService {
         return 1;
     }
 
-    // palletService.js - Método gerarEtiquetaHTML otimizado
-
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
         const dataSeparacao = dataAtual.toLocaleDateString('pt-BR');
@@ -331,7 +350,6 @@ class PalletService {
         const dataEmBranco = '__/__/____';
         const horaEmBranco = '__:__';
 
-        // --- Variáveis para exibição condicional ---
         let tituloPallet = 'PALLET';
         let notaFiscalDisplay = pallet.notaFiscal;
         let recebedorDisplay = pallet.recebedor;
@@ -342,7 +360,7 @@ class PalletService {
         let isDiversos = pallet.tipo === 'DIVERSOS';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
-            tituloPallet = 'PALLET - VOLUMETRIA ALTA';
+            tituloPallet = 'NOTA INFORMATIVA | +30 VOLUMES';
             ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
             volumesDisplay = `
                 <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
@@ -364,8 +382,8 @@ class PalletService {
                     </div>
                 </div>
             `;
-        } else { // DIVERSOS
-            tituloPallet = 'PALLET - DIVERSOS';
+        } else {
+            tituloPallet = 'NOTA INFORMATIVA | DIVERSOS';
             notaFiscalDisplay = 'DIVERSOS';
             recebedorDisplay = 'DIVERSOS';
             ufCidadeDisplay = `${pallet.estado} - DIVERSOS`;
@@ -377,22 +395,17 @@ class PalletService {
                     </div>
                 </div>
             `;
-            // DIVERSOS: não mostra o card de PALLETS
             palletsDisplay = '';
         }
 
-        // --- Lógica de marcação para SERVIÇOS ---
         const marcarAgendamento = (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado);
         const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
 
-        // --- Construção condicional da seção EXPEDIÇÃO com ou sem imagem ---
         let expedicaoContent = '';
 
         if (imagemBase64) {
-            // COM IMAGEM: layout com barra vertical separadora
             expedicaoContent = `
                 <div style="display: flex; gap: 8mm; align-items: flex-start;">
-                    <!-- Coluna das informações -->
                     <div style="flex: 2;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
                             <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
@@ -401,18 +414,13 @@ class PalletService {
                             <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
                         </div>
                     </div>
-
-                    <!-- Barra vertical separadora -->
                     <div style="width: 1px; background: #ddd; align-self: stretch;"></div>
-
-                    <!-- QR CODE -->
                     <div style="flex: 1; text-align: center;">
                         <img src="${imagemBase64}" style="width: 100%; max-width: 140px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
                     </div>
                 </div>
             `;
         } else {
-            // SEM IMAGEM: informações à esquerda, sem barra
             expedicaoContent = `
                 <div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; max-width: 400px;">
@@ -440,25 +448,21 @@ class PalletService {
             page-break-after: avoid;
             page-break-inside: avoid;
         ">
-            <!-- TÍTULO -->
             <div style="text-align: center; margin-bottom: 8mm; border-bottom: 1px solid #ddd; padding-bottom: 4mm;">
                 <h1 style="margin: 0; font-size: 26px; font-weight: bold;">${tituloPallet}</h1>
                 <p style="color: #888; margin: 4px 0 0 0; font-size: 11px;">${dataSeparacao} ${horaAtual}</p>
             </div>
 
-            <!-- SEÇÃO EXPEDIÇÃO -->
             <div style="margin-bottom: 8mm;">
                 <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #2c3e50;">EXPEDIÇÃO</h2>
 
                 ${expedicaoContent}
 
-                <!-- Volumes e Pallets Centralizados (pallets só aparece se não for diversos) -->
                 <div style="display: flex; gap: 8mm; justify-content: center; margin-top: 6mm;">
                     ${volumesDisplay}
                     ${palletsDisplay}
                 </div>
 
-                <!-- Data Separação e Responsável -->
                 <div style="display: flex; gap: 10mm; margin-top: 6mm; flex-wrap: wrap;">
                     <div style="min-width: 120px;">
                         <span style="font-size: 10px; color: #777;">DATA SEPARAÇÃO</span><br>
@@ -471,11 +475,9 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- SEÇÃO TRIAGEM -->
             <div style="margin-bottom: 8mm;">
                 <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #f39c12;">TRIAGEM</h2>
 
-                <!-- SERVIÇOS -->
                 <div style="margin-bottom: 5mm; border: 1px solid #e0e0e0; border-radius: 6px; padding: 5mm;">
                     <div style="font-weight: bold; margin-bottom: 4mm; font-size: 12px; color: #555;">SERVIÇO:</div>
                     <div style="font-size: 11px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3mm;">
@@ -498,13 +500,11 @@ class PalletService {
                     </div>
                 </div>
 
-                <!-- VINCULAR NF -->
                 <div style="margin-bottom: 5mm;">
                     <div style="font-weight: bold; font-size: 12px; margin-bottom: 2mm; color: #555;">VINCULAR NF:</div>
                     <div style="border-bottom: 1px solid #999; height: 28px; width: 100%;"></div>
                 </div>
 
-                <!-- DATA PREV EMBARQUE E CHECKBOXES LIBERADO -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8mm;">
                     <div>
                         <span style="font-size: 10px; font-weight: bold; color: #777;">DATA PREV. EMBARQUE:</span><br>
@@ -526,7 +526,6 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- SEÇÃO ENTREGA -->
             <div style="margin-bottom: 8mm;">
                 <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #27ae60;">ENTREGA</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-bottom: 5mm;">
@@ -551,10 +550,11 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- OBSERVAÇÃO -->
             <div style="margin-top: 5mm;">
                 <div style="font-weight: bold; font-size: 12px; margin-bottom: 3mm; color: #555;">OBSERVAÇÃO:</div>
-                <div style="border: 1px solid #ddd; min-height: 80px; border-radius: 4px; padding: 8px;"></div>
+                <div style="border: 1px solid #ddd; min-height: 80px; border-radius: 4px; padding: 8px;">
+                    ${pallet.observacao ? `<div style="color: #2c3e50; font-size: 12px; white-space: pre-wrap;">${pallet.observacao}</div>` : ''}
+                </div>
             </div>
         </div>
     `;

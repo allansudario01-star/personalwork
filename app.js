@@ -90,6 +90,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('estado-diversos').value = '';
   }
 
+  async function salvarObservacaoAtual() {
+    const observacao = document.getElementById('observacao-pallet').value;
+    if (window.palletAtual && window.palletService) {
+      await window.palletService.salvarObservacao(window.palletAtual, observacao);
+    }
+  }
+
   function configurarBotoes() {
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
       document.getElementById('tipo-pallet-modal').classList.remove('hidden');
@@ -146,7 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('pallet-diversos-modal').classList.add('hidden');
     });
 
-    document.getElementById('close-ajustar-modal').addEventListener('click', () => {
+    document.getElementById('close-ajustar-modal').addEventListener('click', async () => {
+      await salvarObservacaoAtual();
       document.getElementById('ajustar-modal').classList.add('hidden');
     });
 
@@ -163,13 +171,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('save-volume').addEventListener('click', async () => {
       if (!window.palletAtual) return;
+      await salvarObservacaoAtual();
       const novosVolumes = parseInt(document.getElementById('manual-volume').value) || 0;
       await window.palletService.updateVolumes(window.palletAtual, novosVolumes);
       document.getElementById('ajustar-modal').classList.add('hidden');
       renderizarPallets();
     });
 
-    document.getElementById('finalize-from-ajustar').addEventListener('click', () => {
+    document.getElementById('finalize-from-ajustar').addEventListener('click', async () => {
+      await salvarObservacaoAtual();
       const pallet = window.palletService.pallets.get(window.palletAtual);
       if (!pallet) return;
       document.getElementById('ajustar-modal').classList.add('hidden');
@@ -181,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('delete-from-ajustar').addEventListener('click', async () => {
+      await salvarObservacaoAtual();
       if (confirm('⚠️ Tem certeza que deseja excluir este pallet?')) {
         await window.palletService.excluir(window.palletAtual);
         document.getElementById('ajustar-modal').classList.add('hidden');
@@ -272,6 +283,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const infoDiv = document.getElementById('ajustar-info');
     const volumeControls = document.getElementById('volume-controls-container');
     const saveButton = document.getElementById('save-volume');
+    const observacaoTextarea = document.getElementById('observacao-pallet');
+
+    if (observacaoTextarea) {
+      observacaoTextarea.value = p.observacao || '';
+    }
 
     modalTitle.innerText = isVolumetriaAlta ? `Ajustar Pallet - NF ${p.notaFiscal}` : `Pallet Diversos - ${p.hub} / ${p.estado}`;
 
@@ -285,6 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <strong>Cidade:</strong> ${p.cidade}<br>
                 <strong>Volumes:</strong> ${p.volumesAtuais} / ${p.maxVolumes}<br>
                 <strong>Status:</strong> ${p.agendamentoMarcado ? '📅 AGENDADO' : '📦 BOLSÃO'}<br>
+                ${p.observacao ? `<strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
       volumeControls.innerHTML = `
@@ -312,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <strong>UF:</strong> ${p.estado}<br>
                 <strong>Cidade:</strong> DIVERSOS<br>
                 <strong>Volumes:</strong> DIVERSOS
+                ${p.observacao ? `<br><strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
       volumeControls.innerHTML = `<div style="text-align: center; color: #7f8c8d;">Não é possível ajustar volumes para pallets de diversos.</div>`;
@@ -423,7 +441,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <strong>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais} / ${p.maxVolumes}`}</strong>
                     </div>
                 </div>
-
+                ${p.observacao ? `
+                <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: 12px; color: #e67e22; border-left: 3px solid #f39c12;">
+                    📝 ${p.observacao}
+                </div>
+                ` : ''}
                 ${!isDiversos && p.volumesAtuais >= p.maxVolumes ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
 
                 <div class="card-actions">
@@ -453,6 +475,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
                             <div class="info-item"><small>Volumes</small><strong>${anexo.volumesAtuais} / ${anexo.maxVolumes}</strong></div>
                         </div>
+                        ${anexo.observacao ? `
+                        <div style="margin-top: 8px; padding: 6px; background: #fff3e0; border-radius: 6px; font-size: 11px; color: #e67e22;">
+                            📝 ${anexo.observacao}
+                        </div>
+                        ` : ''}
                         <div class="card-actions" style="margin-top: 10px;">
                             <button onclick="abrirModalAjustar('${anexo.id}')" style="padding: 8px; font-size: 12px;">Ajustar</button>
                             <button onclick="finalizarPallet('${anexo.id}')" style="padding: 8px; font-size: 12px;">Finalizar</button>
@@ -530,7 +557,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div><small>Volumes</small><br>${isDiversos ? 'DIVERSOS' : `${p.volumesAtuais}/${p.maxVolumes}`}</div>
                         <div><small>Finalizado</small><br>${dataFinalizacao}</div>
                     </div>
-
+                    ${p.observacao ? `
+                    <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: 12px; color: #e67e22;">
+                        📝 ${p.observacao}
+                    </div>
+                    ` : ''}
                     <div style="margin-top: 15px;">
                         <button onclick="reimprimirEtiqueta('${p.id}')" style="width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 8px;">
                             🖨️ Reimprimir

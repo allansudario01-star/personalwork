@@ -321,7 +321,7 @@ class PalletService {
 
         return 1;
     }
-    // palletService.js (Apenas o método gerarEtiquetaHTML foi atualizado)
+    // palletService.js - Método gerarEtiquetaHTML atualizado
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
@@ -329,7 +329,6 @@ class PalletService {
         const horaAtual = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const dataEmBranco = '__/__/____';
         const horaEmBranco = '__:__';
-        const linhaEmBranco = '_________________________';
 
         // --- Variáveis para exibição condicional ---
         let tituloPallet = 'PALLET';
@@ -339,7 +338,6 @@ class PalletService {
         let ufCidadeDisplay = '';
         let volumesDisplay = '';
         let palletsDisplay = '';
-        let isDiversos = pallet.tipo === 'DIVERSOS';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
             tituloPallet = 'PALLET - VOLUMETRIA ALTA';
@@ -387,41 +385,15 @@ class PalletService {
             `;
         }
 
-        // --- Lógica de marcação para a seção TRIAGEM ---
-        // Para "Volumetria Alta" e agendado, marca o checkbox "AGENDAMENTO".
-        // Para "Volumetria Alta" não agendado ou "Diversos", nenhum checkbox é marcado.
+        // --- Lógica de marcação para SERVIÇOS ---
+        // Para "Volumetria Alta" e agendado, marca o checkbox "AGENDAMENTO"
+        // Para qualquer outro caso, todos os serviços ficam em branco
         const marcarAgendamento = (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado);
-        const marcarBolsao = false; // Nunca marca Bolsão automaticamente
-        const marcarAguardando = false; // Nunca marca Aguardando automaticamente
 
         const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
-        const bolsaoChecked = marcarBolsao ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
-        const aguardandoChecked = marcarAguardando ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
-
-        const agendamentoSection = `
-            <div style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa;">
-                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 150px;">
-                        <div style="font-weight: bold; font-size: 13px; margin-bottom: 8px;">VINCULAR NF:</div>
-                        <div style="border-bottom: 1px solid #999; height: 28px;"></div>
-                    </div>
-                    <div style="display: flex; gap: 25px; align-items: center; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${agendamentoChecked}"></span>
-                            <span style="font-weight: 500;">AGENDAMENTO</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${bolsaoChecked}"></span>
-                            <span style="font-weight: 500;">BOLSÃO</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${aguardandoChecked}"></span>
-                            <span style="font-weight: 500;">AGUARDANDO DATA DE AGENDAMENTO</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        `;
+        const entregaDiretaChecked = '';
+        const envioUnidadeChecked = '';
+        const interhubChecked = '';
 
         // --- Estrutura da Etiqueta com as 3 seções ---
         return `
@@ -479,14 +451,24 @@ class PalletService {
                 <div style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa;">
                     <div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">SERVIÇO:</div>
                     <div style="font-size: 13px; display: flex; flex-wrap: wrap; gap: 20px;">
-                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Entrega direta para o recebedor</label>
-                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Envio para a unidade ou ponto de encontro</label>
-                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Interhub / Entrega para o recebedor</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; ${entregaDiretaChecked}"></span>
+                            Entrega direta para o recebedor
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; ${envioUnidadeChecked}"></span>
+                            Envio para a unidade ou ponto de encontro
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; ${interhubChecked}"></span>
+                            Interhub / Entrega para o recebedor
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
+                            <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; ${agendamentoChecked}"></span>
+                            AGENDAMENTO
+                        </label>
                     </div>
                 </div>
-
-                <!-- Vincular NF / Agendamento -->
-                ${agendamentoSection}
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
                     <div>

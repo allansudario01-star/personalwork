@@ -322,7 +322,7 @@ class PalletService {
         return 1;
     }
 
-    // palletService.js - Método gerarEtiquetaHTML com imagem maior
+    // palletService.js - Método gerarEtiquetaHTML com barra condicional
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
@@ -390,6 +390,48 @@ class PalletService {
         const marcarAgendamento = (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado);
         const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
 
+        // --- Construção condicional da seção EXPEDIÇÃO com ou sem imagem ---
+        let expedicaoContent = '';
+
+        if (imagemBase64) {
+            // COM IMAGEM: layout com barra vertical separadora
+            expedicaoContent = `
+                <div style="display: flex; gap: 8mm; align-items: flex-start;">
+                    <!-- Coluna das informações -->
+                    <div style="flex: 2;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
+                            <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 16px;">${notaFiscalDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Barra vertical separadora -->
+                    <div style="width: 1px; background: #ddd; align-self: stretch;"></div>
+
+                    <!-- QR CODE - GRANDE E CENTRALIZADO -->
+                    <div style="flex: 1; text-align: center;">
+                        <img src="${imagemBase64}" style="width: 100%; max-width: 140px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
+                    </div>
+                </div>
+            `;
+        } else {
+            // SEM IMAGEM: layout centralizado sem barra
+            expedicaoContent = `
+                <div style="display: flex; justify-content: center;">
+                    <div style="width: 100%; max-width: 400px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
+                            <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 16px;">${notaFiscalDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
+                            <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         return `
         <div style="
             font-family: Arial, sans-serif;
@@ -415,24 +457,7 @@ class PalletService {
             <div style="margin-bottom: 8mm;">
                 <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #2c3e50;">EXPEDIÇÃO</h2>
 
-                <!-- Linha superior com informações e QR Code -->
-                <div style="display: flex; gap: 8mm; flex-wrap: wrap; align-items: flex-start;">
-                    <div style="flex: 2; min-width: 200px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
-                            <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 16px;">${notaFiscalDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
-                        </div>
-                    </div>
-
-                    <!-- QR CODE - TAMANHO AUMENTADO -->
-                    ${imagemBase64 ? `
-                    <div style="flex: 1; min-width: 100px; text-align: center;">
-                        <img src="${imagemBase64}" style="width: 100%; max-width: 120px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
-                    </div>
-                    ` : ''}
-                </div>
+                ${expedicaoContent}
 
                 <!-- Volumes e Pallets Centralizados -->
                 <div style="display: flex; gap: 8mm; justify-content: center; margin-top: 6mm;">
@@ -524,7 +549,7 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- OBSERVAÇÃO - AMPLIADA -->
+            <!-- OBSERVAÇÃO -->
             <div style="margin-top: 5mm;">
                 <div style="font-weight: bold; font-size: 12px; margin-bottom: 3mm; color: #555;">OBSERVAÇÃO:</div>
                 <div style="border: 1px solid #ddd; min-height: 80px; border-radius: 4px; padding: 8px;"></div>

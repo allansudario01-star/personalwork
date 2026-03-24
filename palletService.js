@@ -493,7 +493,7 @@ class PalletService {
                         </label>
                         <label style="display: flex; align-items: center; gap: 3mm; cursor: default;">
                             <span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px; ${agendamentoChecked}"></span>
-                            AGENDAMENTO
+                            Agendamento
                         </label>
                     </div>
                 </div>

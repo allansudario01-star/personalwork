@@ -322,7 +322,7 @@ class PalletService {
         return 1;
     }
 
-    // palletService.js - Método gerarEtiquetaHTML com barra condicional
+    // palletService.js - Método gerarEtiquetaHTML otimizado
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
@@ -339,6 +339,7 @@ class PalletService {
         let ufCidadeDisplay = '';
         let volumesDisplay = '';
         let palletsDisplay = '';
+        let isDiversos = pallet.tipo === 'DIVERSOS';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
             tituloPallet = 'PALLET - VOLUMETRIA ALTA';
@@ -376,14 +377,8 @@ class PalletService {
                     </div>
                 </div>
             `;
-            palletsDisplay = `
-                <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                    <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 4px;">PALLETS</div>
-                    <div>
-                        <span style="font-size: 26px; font-weight: bold;">1</span>
-                    </div>
-                </div>
-            `;
+            // DIVERSOS: não mostra o card de PALLETS
+            palletsDisplay = '';
         }
 
         // --- Lógica de marcação para SERVIÇOS ---
@@ -410,23 +405,21 @@ class PalletService {
                     <!-- Barra vertical separadora -->
                     <div style="width: 1px; background: #ddd; align-self: stretch;"></div>
 
-                    <!-- QR CODE - GRANDE E CENTRALIZADO -->
+                    <!-- QR CODE -->
                     <div style="flex: 1; text-align: center;">
                         <img src="${imagemBase64}" style="width: 100%; max-width: 140px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
                     </div>
                 </div>
             `;
         } else {
-            // SEM IMAGEM: layout centralizado sem barra
+            // SEM IMAGEM: informações à esquerda, sem barra
             expedicaoContent = `
-                <div style="display: flex; justify-content: center;">
-                    <div style="width: 100%; max-width: 400px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
-                            <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 16px;">${notaFiscalDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
-                            <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
-                        </div>
+                <div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; max-width: 400px;">
+                        <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 16px;">${hubDisplay}</strong></div>
+                        <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 16px;">${notaFiscalDisplay}</strong></div>
+                        <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
+                        <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
                     </div>
                 </div>
             `;
@@ -459,7 +452,7 @@ class PalletService {
 
                 ${expedicaoContent}
 
-                <!-- Volumes e Pallets Centralizados -->
+                <!-- Volumes e Pallets Centralizados (pallets só aparece se não for diversos) -->
                 <div style="display: flex; gap: 8mm; justify-content: center; margin-top: 6mm;">
                     ${volumesDisplay}
                     ${palletsDisplay}
@@ -511,15 +504,24 @@ class PalletService {
                     <div style="border-bottom: 1px solid #999; height: 28px; width: 100%;"></div>
                 </div>
 
-                <!-- DATA PREV EMBARQUE E LIBERADO POR -->
+                <!-- DATA PREV EMBARQUE E CHECKBOXES LIBERADO -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8mm;">
                     <div>
                         <span style="font-size: 10px; font-weight: bold; color: #777;">DATA PREV. EMBARQUE:</span><br>
                         <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">${dataEmBranco}</span>
                     </div>
                     <div>
-                        <span style="font-size: 10px; font-weight: bold; color: #777;">LIBERADO POR:</span><br>
-                        <div style="border-bottom: 1px solid #999; height: 28px;"></div>
+                        <span style="font-size: 10px; font-weight: bold; color: #777;">LIBERADO:</span><br>
+                        <div style="display: flex; gap: 8mm; margin-top: 2px;">
+                            <label style="display: flex; align-items: center; gap: 2mm; cursor: default;">
+                                <span style="border: 1.5px solid #333; display: inline-block; width: 14px; height: 14px;"></span>
+                                <span style="font-size: 12px;">SIM</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 2mm; cursor: default;">
+                                <span style="border: 1.5px solid #333; display: inline-block; width: 14px; height: 14px;"></span>
+                                <span style="font-size: 12px;">NÃO</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -321,6 +321,7 @@ class PalletService {
 
         return 1;
     }
+    // palletService.js (Apenas o método gerarEtiquetaHTML foi atualizado)
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
@@ -330,6 +331,7 @@ class PalletService {
         const horaEmBranco = '__:__';
         const linhaEmBranco = '_________________________';
 
+        // --- Variáveis para exibição condicional ---
         let tituloPallet = 'PALLET';
         let notaFiscalDisplay = pallet.notaFiscal;
         let recebedorDisplay = pallet.recebedor;
@@ -337,11 +339,11 @@ class PalletService {
         let ufCidadeDisplay = '';
         let volumesDisplay = '';
         let palletsDisplay = '';
+        let isDiversos = pallet.tipo === 'DIVERSOS';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
             tituloPallet = 'PALLET - VOLUMETRIA ALTA';
             ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
-
             volumesDisplay = `
                 <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
                     <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">VOLUMES</div>
@@ -351,7 +353,6 @@ class PalletService {
                     </div>
                 </div>
             `;
-
             const totalPallets = this.obterTotalPalletsGrupo(pallet);
             const indiceAtual = this.obterIndiceNoGrupo(pallet);
             palletsDisplay = `
@@ -363,8 +364,10 @@ class PalletService {
                     </div>
                 </div>
             `;
-        } else {
+        } else { // DIVERSOS
             tituloPallet = 'PALLET - DIVERSOS';
+            notaFiscalDisplay = 'DIVERSOS';
+            recebedorDisplay = 'DIVERSOS';
             ufCidadeDisplay = `${pallet.estado} - DIVERSOS`;
             volumesDisplay = `
                 <div style="text-align: center; background: #e8f4f8; padding: 10px; border-radius: 8px; border: 1px solid #3498db;">
@@ -374,11 +377,28 @@ class PalletService {
                     </div>
                 </div>
             `;
+            palletsDisplay = `
+                <div style="text-align: center; background: #f0f0f0; padding: 10px; border-radius: 8px; border: 1px solid #7f8c8d;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">PALLETS</div>
+                    <div>
+                        <span style="font-size: 24px; font-weight: bold;">1</span>
+                    </div>
+                </div>
+            `;
         }
 
-        const agendamentoChecked = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
+        // --- Lógica de marcação para a seção TRIAGEM ---
+        // Para "Volumetria Alta" e agendado, marca o checkbox "AGENDAMENTO".
+        // Para "Volumetria Alta" não agendado ou "Diversos", nenhum checkbox é marcado.
+        const marcarAgendamento = (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado);
+        const marcarBolsao = false; // Nunca marca Bolsão automaticamente
+        const marcarAguardando = false; // Nunca marca Aguardando automaticamente
 
-        const agendamentoSection = pallet.tipo === 'VOLUMETRIA_ALTA' ? `
+        const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
+        const bolsaoChecked = marcarBolsao ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
+        const aguardandoChecked = marcarAguardando ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
+
+        const agendamentoSection = `
             <div style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa;">
                 <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 150px;">
@@ -387,27 +407,28 @@ class PalletService {
                     </div>
                     <div style="display: flex; gap: 25px; align-items: center; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${agendamentoChecked}"></span>
                             <span style="font-weight: 500;">AGENDAMENTO</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${!agendamentoChecked ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : ''}"></span>
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${bolsaoChecked}"></span>
                             <span style="font-weight: 500;">BOLSÃO</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: default;">
-                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px;"></span>
+                            <span style="border: 2px solid #333; display: inline-block; width: 18px; height: 18px; ${aguardandoChecked}"></span>
                             <span style="font-weight: 500;">AGUARDANDO DATA DE AGENDAMENTO</span>
                         </label>
                     </div>
                 </div>
             </div>
-        ` : '';
+        `;
 
+        // --- Estrutura da Etiqueta com as 3 seções ---
         return `
         <div style="
             font-family: Arial, sans-serif;
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             border: 2px solid #333;
@@ -417,115 +438,98 @@ class PalletService {
             font-size: 14px;
             page-break-inside: avoid;
         ">
-            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 8px;">
-                <h1 style="margin: 0; font-size: 32px;">${tituloPallet}</h1>
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+                <h1 style="margin: 0; font-size: 28px;">${tituloPallet}</h1>
                 <p style="color: #666; margin: 5px 0 0 0; font-size: 12px;">${dataSeparacao} ${horaAtual}</p>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                    <div style="margin-bottom: 8px;">
-                        <span style="font-size: 12px; color: #555;">UNIDADE:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${hubDisplay}</span>
+            <!-- SEÇÃO EXPEDIÇÃO -->
+            <div style="margin-bottom: 25px;">
+                <h2 style="background: #2c3e50; color: white; padding: 8px 12px; border-radius: 8px; font-size: 18px; margin-bottom: 15px;">EXPEDIÇÃO</h2>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <!-- Coluna de Informações -->
+                    <div style="flex: 2; min-width: 200px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div><span style="font-size: 12px; color: #555;">UNIDADE:</span><br><strong>${hubDisplay}</strong></div>
+                            <div><span style="font-size: 12px; color: #555;">NÚMERO FISCAL:</span><br><strong>${notaFiscalDisplay}</strong></div>
+                            <div><span style="font-size: 12px; color: #555;">RECEBEDOR:</span><br><strong>${recebedorDisplay}</strong></div>
+                            <div><span style="font-size: 12px; color: #555;">UF/CIDADE:</span><br><strong>${ufCidadeDisplay}</strong></div>
+                        </div>
+                        <div style="display: flex; gap: 20px; margin-top: 20px;">
+                            ${volumesDisplay}
+                            ${palletsDisplay}
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div><span style="font-size: 12px; color: #555;">DATA SEPARAÇÃO:</span><br><strong>${dataSeparacao}</strong></div>
+                            <div><span style="font-size: 12px; color: #555;">RESPONSÁVEL SEPARAÇÃO:</span><br><div style="border-bottom: 2px solid #333; width: 200px; height: 28px;"></div></div>
+                        </div>
                     </div>
-                    <div>
-                        <span style="font-size: 12px; color: #555;">RECEBEDOR:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${recebedorDisplay}</span>
+                    <!-- Coluna do QR Code (imagem anexada) -->
+                    ${imagemBase64 ? `
+                    <div style="flex: 1; min-width: 120px; text-align: center;">
+                        <img src="${imagemBase64}" style="max-width: 100%; max-height: 150px; object-fit: contain; border: 1px solid #ccc;" />
                     </div>
-                </div>
-                <div>
-                    <div style="margin-bottom: 8px;">
-                        <span style="font-size: 12px; color: #555;">NÚMERO FISCAL:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${notaFiscalDisplay}</span>
-                    </div>
-                    <div>
-                        <span style="font-size: 12px; color: #555;">UF/CIDADE:</span><br>
-                        <span style="font-size: 18px; font-weight: bold;">${ufCidadeDisplay}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                ${volumesDisplay}
-                ${palletsDisplay}
-            </div>
-
-            <div style="margin-bottom: 15px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">SERVIÇO:</div>
-                <div style="font-size: 12px;">
-                    <div style="margin-bottom: 5px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
-                        <span style="vertical-align: middle;">Entrega direta para o recebedor</span>
-                    </div>
-                    <div style="margin-bottom: 5px;">
-                        <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
-                        <span style="vertical-align: middle;">Envio para a unidade ou ponto de encontro</span>
-                    </div>
-                    <div>
-                        <span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></span>
-                        <span style="vertical-align: middle;">Interhub / Entrega para o recebedor</span>
-                    </div>
+                    ` : ''}
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                    <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">TIPO VEÍCULO:</div>
-                    <div style="border-bottom: 2px solid #333; height: 24px;"></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <div style="font-size: 11px; font-weight: bold; color: #555;">DATA SEPARAÇÃO:</div>
-                        <div style="font-size: 16px; font-weight: bold;">${dataSeparacao}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 11px; font-weight: bold; color: #555;">DATA PREV. EMBARQUE:</div>
-                        <div style="font-size: 16px; font-weight: bold; letter-spacing: 2px;">${dataEmBranco}</div>
-                    </div>
-                </div>
-            </div>
-
-            ${agendamentoSection}
-
-            <div style="margin-bottom: 15px; display: flex; align-items: baseline; gap: 15px; flex-wrap: wrap;">
-                <div style="font-weight: bold; font-size: 14px;">RESPONSÁVEL:</div>
-                <div style="border-bottom: 1px solid #999; flex: 1; min-width: 200px; height: 28px;"></div>
-            </div>
-
-            <div style="margin-bottom: 15px; border-top: 2px solid #333; padding-top: 8px;">
-                <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">VIAGEM</div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 8px;">
-                    <div>
-                        <span style="font-size: 11px; font-weight: bold;">Motorista previsto:</span><br>
-                        <div style="border-bottom: 2px solid #333; height: 22px;"></div>
-                    </div>
-                    <div>
-                        <span style="font-size: 11px; font-weight: bold;">Liberado por:</span><br>
-                        <div style="border-bottom: 2px solid #333; height: 22px;"></div>
+            <!-- SEÇÃO TRIAGEM -->
+            <div style="margin-bottom: 25px;">
+                <h2 style="background: #f39c12; color: white; padding: 8px 12px; border-radius: 8px; font-size: 18px; margin-bottom: 15px;">TRIAGEM</h2>
+                <div style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa;">
+                    <div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">SERVIÇO:</div>
+                    <div style="font-size: 13px; display: flex; flex-wrap: wrap; gap: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Entrega direta para o recebedor</label>
+                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Envio para a unidade ou ponto de encontro</label>
+                        <label style="display: flex; align-items: center; gap: 8px;"><span style="border: 2px solid #333; display: inline-block; width: 16px; height: 16px;"></span> Interhub / Entrega para o recebedor</label>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <!-- Vincular NF / Agendamento -->
+                ${agendamentoSection}
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
                     <div>
-                        <span style="font-size: 11px; font-weight: bold;">Data realizada entrega:</span><br>
+                        <span style="font-size: 12px; font-weight: bold;">DATA PREV. EMBARQUE:</span><br>
                         <span style="font-size: 16px; font-weight: bold; letter-spacing: 2px;">${dataEmBranco}</span>
                     </div>
                     <div>
-                        <span style="font-size: 11px; font-weight: bold;">Hora:</span><br>
+                        <span style="font-size: 12px; font-weight: bold;">LIBERADO POR:</span><br>
+                        <div style="border-bottom: 2px solid #333; height: 28px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO ENTREGA -->
+            <div style="margin-bottom: 25px;">
+                <h2 style="background: #27ae60; color: white; padding: 8px 12px; border-radius: 8px; font-size: 18px; margin-bottom: 15px;">ENTREGA</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <span style="font-size: 12px; font-weight: bold;">MOTORISTA PREVISTO:</span><br>
+                        <div style="border-bottom: 2px solid #333; height: 28px;"></div>
+                    </div>
+                    <div>
+                        <span style="font-size: 12px; font-weight: bold;">LIBERADO POR:</span><br>
+                        <div style="border-bottom: 2px solid #333; height: 28px;"></div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <span style="font-size: 12px; font-weight: bold;">DATA REALIZADA ENTREGA:</span><br>
+                        <span style="font-size: 16px; font-weight: bold; letter-spacing: 2px;">${dataEmBranco}</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 12px; font-weight: bold;">HORA:</span><br>
                         <span style="font-size: 16px; font-weight: bold; letter-spacing: 2px;">${horaEmBranco}</span>
                     </div>
                 </div>
             </div>
 
+            <!-- OBSERVAÇÃO -->
             <div>
                 <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px;">OBSERVAÇÃO:</div>
                 <div style="border: 1px solid #333; min-height: 45px; border-radius: 4px;"></div>
             </div>
-
-            ${imagemBase64 ? `<div style="margin-top: 20px; text-align: center;">
-                <img src="${imagemBase64}" style="max-width: 100%; max-height: 200px; object-fit: contain;" />
-            </div>` : ''}
         </div>
     `;
     }

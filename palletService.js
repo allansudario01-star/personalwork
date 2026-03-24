@@ -321,6 +321,7 @@ class PalletService {
 
         return 1;
     }
+
     // palletService.js - Método gerarEtiquetaHTML com imagem maior
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {

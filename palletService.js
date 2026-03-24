@@ -321,7 +321,7 @@ class PalletService {
 
         return 1;
     }
-    // palletService.js - Método gerarEtiquetaHTML otimizado para A4
+    // palletService.js - Método gerarEtiquetaHTML com imagem maior
 
     gerarEtiquetaHTML(pallet, isAgendado, imagemBase64 = null) {
         const dataAtual = new Date();
@@ -414,7 +414,7 @@ class PalletService {
             <div style="margin-bottom: 8mm;">
                 <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #2c3e50;">EXPEDIÇÃO</h2>
 
-                <!-- Linha superior com informações e possível QR Code -->
+                <!-- Linha superior com informações e QR Code -->
                 <div style="display: flex; gap: 8mm; flex-wrap: wrap; align-items: flex-start;">
                     <div style="flex: 2; min-width: 200px;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5mm;">
@@ -425,10 +425,10 @@ class PalletService {
                         </div>
                     </div>
 
-                    <!-- QR Code Centralizado -->
+                    <!-- QR CODE - TAMANHO AUMENTADO -->
                     ${imagemBase64 ? `
-                    <div style="flex: 1; min-width: 80px; text-align: center;">
-                        <img src="${imagemBase64}" style="max-width: 100%; max-height: 70px; object-fit: contain; margin: 0 auto;" />
+                    <div style="flex: 1; min-width: 100px; text-align: center;">
+                        <img src="${imagemBase64}" style="width: 100%; max-width: 120px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
                     </div>
                     ` : ''}
                 </div>
@@ -523,10 +523,10 @@ class PalletService {
                 </div>
             </div>
 
-            <!-- OBSERVAÇÃO - AUMENTADA -->
+            <!-- OBSERVAÇÃO - AMPLIADA -->
             <div style="margin-top: 5mm;">
                 <div style="font-weight: bold; font-size: 12px; margin-bottom: 3mm; color: #555;">OBSERVAÇÃO:</div>
-                <div style="border: 1px solid #ddd; min-height: 70px; border-radius: 4px; padding: 8px;"></div>
+                <div style="border: 1px solid #ddd; min-height: 80px; border-radius: 4px; padding: 8px;"></div>
             </div>
         </div>
     `;

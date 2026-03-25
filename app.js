@@ -94,14 +94,12 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('agendamento-maxVolumes').value = '';
     document.getElementById('agendamento-volumes-texto').value = 'DIVERSOS';
 
-    // Reset volume tipo
     document.querySelector('input[name="agendamento-volume-tipo"][value="fixo"]').checked = true;
     document.getElementById('agendamento-volumes-fixo').style.display = 'block';
     document.getElementById('agendamento-volumes-diversos').style.display = 'none';
     document.getElementById('agendamento-maxVolumes').setAttribute('required', 'required');
     document.getElementById('agendamento-volumes-texto').removeAttribute('required');
 
-    // Reset data tipo
     document.querySelector('input[name="agendamento-data-tipo"][value="aguardando"]').checked = true;
     document.getElementById('agendamento-data-fixa').style.display = 'none';
     document.getElementById('agendamento-data-fixa').value = '';
@@ -169,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('tipo-pallet-modal').classList.add('hidden');
     });
 
-    // Radio buttons para volume do agendamento
     document.querySelectorAll('input[name="agendamento-volume-tipo"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const fixoDiv = document.getElementById('agendamento-volumes-fixo');
@@ -191,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
-    // Radio buttons para data do agendamento
     document.querySelectorAll('input[name="agendamento-data-tipo"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const dataFixaInput = document.getElementById('agendamento-data-fixa');
@@ -205,7 +201,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
-    // Formulário Volumetria Alta (mantido igual)
     document.getElementById('pallet-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const dados = {
@@ -221,7 +216,6 @@ document.addEventListener('DOMContentLoaded', function () {
       renderizarPallets();
     });
 
-    // Formulário Agendamento (novo)
     document.getElementById('pallet-agendamento-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -268,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function () {
       renderizarPallets();
     });
 
-    // Formulário Diversos (mantido igual)
     document.getElementById('pallet-diversos-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const dados = {
@@ -440,7 +433,6 @@ document.addEventListener('DOMContentLoaded', function () {
       modalTitle.innerText = `Ajustar Pallet Agendado - ${p.notaFiscal}`;
       agendamentoContainer.style.display = 'block';
 
-      // Configurar data de agendamento
       if (p.dataAgendamentoTipo === 'fixa' && p.dataAgendamento && p.dataAgendamento !== 'AGUARDANDO AGENDAMENTO') {
         document.querySelector('input[name="ajustar-data-tipo"][value="fixa"]').checked = true;
         document.getElementById('ajustar-data-fixa').style.display = 'block';
@@ -595,8 +587,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const anexos = pallets.filter(a => a.palletPrincipalId === p.id);
       const isDiversos = p.tipo === 'DIVERSOS';
       const isAgendamento = p.tipo === 'AGENDAMENTO';
-      const agendado = p.tipo === 'VOLUMETRIA_ALTA' ? p.agendamentoMarcado : false;
-      const cardClass = `pallet-card ${agendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''} ${isAgendamento ? 'agendamento-card' : ''}`;
+      const isVolumetriaAlta = p.tipo === 'VOLUMETRIA_ALTA';
+
+      const mostrarBadgeAgendado = isAgendamento ? true : (isVolumetriaAlta ? p.agendamentoMarcado : false);
+
+      const cardClass = `pallet-card ${mostrarBadgeAgendado ? 'agendado' : ''} ${isDiversos ? 'diversos' : ''} ${isAgendamento ? 'agendamento-card' : ''}`;
 
       const totalPalletsGrupo = 1 + anexos.length;
 
@@ -613,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="${cardClass}" style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span class="nf-tag">${isDiversos ? 'DIVERSOS' : (isAgendamento ? '📅 ' + p.notaFiscal : `NF ${p.notaFiscal}`)}</span>
-                    ${p.tipo === 'VOLUMETRIA_ALTA' ? (agendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 BOLSÃO</span>') : ''}
+                    ${!isDiversos ? (mostrarBadgeAgendado ? '<span class="agendado-badge">📅 AGENDADO</span>' : '<span class="nao-agendado-badge">📦 BOLSÃO</span>') : ''}
                 </div>
 
                 <div class="info-grid">

@@ -674,4 +674,18 @@ h2 {
     padding: 0;
     background: white;
   }
+
+  .pallet-card.agendamento-card {
+    border-left: 6px solid #f39c12;
+    background: linear-gradient(to right, #fffef7, white);
+  }
+
+  .pallet-card.agendamento-card .nf-tag {
+    color: #e67e22;
+  }
+
+  #agendamento-ajustar-container {
+    background: #fff3e0;
+    border-radius: 12px;
+  }
 }

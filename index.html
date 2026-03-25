@@ -59,6 +59,7 @@
             <div class="tipo-options">
                 <button id="tipo-volumetria-alta" class="btn-primary" style="margin-bottom: 15px;">📦 Volumetria
                     Alta</button>
+                <button id="tipo-agendamento" class="btn-warning" style="margin-bottom: 15px;">📅 Agendamento</button>
                 <button id="tipo-diversos" class="btn-secondary">📦 Diversos</button>
             </div>
             <button id="cancel-tipo-modal" class="btn-secondary" style="margin-top: 20px;">Cancelar</button>
@@ -79,6 +80,62 @@
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>
                     <button type="button" id="close-modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="pallet-agendamento-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Novo Pallet - Agendamento</h3>
+            <form id="pallet-agendamento-form">
+                <input type="text" id="agendamento-nf" placeholder="Número Fiscal" required>
+                <input type="text" id="agendamento-recebedor" placeholder="Recebedor" required>
+                <input type="text" id="agendamento-hub" placeholder="Unidade" required>
+                <input type="text" id="agendamento-estado" placeholder="UF" maxlength="2" required>
+                <input type="text" id="agendamento-cidade" placeholder="Cidade" required>
+
+                <div style="margin: 15px 0;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">📦 Tipo de Volume</label>
+                    <div style="display: flex; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="agendamento-volume-tipo" value="fixo" checked>
+                            <span>Volume Fixo</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="agendamento-volume-tipo" value="diversos">
+                            <span>Diversos (sem número fixo)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="agendamento-volumes-fixo">
+                    <input type="number" id="agendamento-maxVolumes" placeholder="Volumes Totais" min="1">
+                </div>
+
+                <div id="agendamento-volumes-diversos" style="display: none;">
+                    <input type="text" id="agendamento-volumes-texto" placeholder="Ex: DIVERSOS, 10/10, etc"
+                        value="DIVERSOS">
+                </div>
+
+                <div style="margin: 15px 0;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">📅 Data do Agendamento</label>
+                    <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="agendamento-data-tipo" value="aguardando" checked>
+                            <span>⏳ Aguardando Agendamento</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="agendamento-data-tipo" value="fixa">
+                            <span>📆 Data Fixa</span>
+                        </label>
+                    </div>
+                    <input type="date" id="agendamento-data-fixa" style="width: 100%; display: none;">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit">Criar Pallet</button>
+                    <button type="button" id="close-agendamento-modal">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -105,6 +162,24 @@
             <div id="ajustar-info"></div>
 
             <div id="volume-controls-container" class="volume-controls">
+            </div>
+
+            <div id="agendamento-ajustar-container"
+                style="margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 12px; display: none;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #e67e22;">📅 DATA DO
+                    AGENDAMENTO</label>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="ajustar-data-tipo" value="aguardando">
+                        <span>⏳ Aguardando Agendamento</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="ajustar-data-tipo" value="fixa">
+                        <span>📆 Data Fixa</span>
+                    </label>
+                </div>
+                <input type="date" id="ajustar-data-fixa"
+                    style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
             </div>
 
             <div id="observacao-container" style="margin-top: 20px;">

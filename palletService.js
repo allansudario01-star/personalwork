@@ -118,7 +118,8 @@ class PalletService {
                 volumesDiversos: data.volumesDiversos || false,
                 volumesTexto: data.volumesTexto || 'DIVERSOS',
                 dataAgendamento: data.dataAgendamento || null,
-                dataAgendamentoTipo: data.dataAgendamentoTipo || null
+                dataAgendamentoTipo: data.dataAgendamentoTipo || null,
+                agendamentoMarcado: true
             };
         } else {
             novo = {

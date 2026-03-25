@@ -527,7 +527,7 @@ class PalletService {
             </div>
 
             <div style="margin-bottom: 8mm;">
-                <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #27ae60;">ENTREGA</h2>
+                <h2 style="background: #f0f0f0; color: #333; padding: 4px 10px; border-radius: 4px; font-size: 15px; font-weight: bold; margin-bottom: 5mm; border-left: 3px solid #27ae60;">TRANSPORTE</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-bottom: 5mm;">
                     <div>
                         <span style="font-size: 10px; font-weight: bold; color: #777;">MOTORISTA PREVISTO:</span><br>

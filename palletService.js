@@ -90,7 +90,8 @@ class PalletService {
             palletsVinculados: [],
             palletPrincipalId: null,
             agendamentoMarcado: false,
-            observacao: ''
+            observacao: '',
+            subrota: data.subrota || ''
         };
 
         let novo;
@@ -396,7 +397,7 @@ class PalletService {
         let isAgendamento = pallet.tipo === 'AGENDAMENTO';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
-            tituloPallet = 'NOTA INFORMATIVA | +30 VOLUMES';
+            tituloPallet = 'NOTA INFORMATIVA | +20 VOLUMES';
             ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
             volumesDisplay = `
                 <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
@@ -462,6 +463,13 @@ class PalletService {
         const marcarAgendamento = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
         const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
 
+        const subrotaHtml = pallet.subrota ? `
+            <div style="margin-top: 8px; padding: 8px; background: #fff8e7; border-radius: 8px; border-left: 3px solid #f39c12;">
+                <span style="font-size: 10px; color: #777;">SUBROTA / SUBREGIÃO:</span><br>
+                <strong style="font-size: 13px; white-space: pre-wrap;">${pallet.subrota}</strong>
+            </div>
+        ` : '';
+
         let expedicaoContent = '';
 
         if (imagemBase64) {
@@ -474,6 +482,7 @@ class PalletService {
                             <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
                             <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
                         </div>
+                        ${subrotaHtml}
                     </div>
                     <div style="width: 1px; background: #ddd; align-self: stretch;"></div>
                     <div style="flex: 1; text-align: center;">
@@ -490,6 +499,7 @@ class PalletService {
                         <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 16px;">${recebedorDisplay}</strong></div>
                         <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 16px;">${ufCidadeDisplay}</strong></div>
                     </div>
+                    ${subrotaHtml}
                 </div>
             `;
         }

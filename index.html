@@ -57,8 +57,8 @@
         <div class="modal-content">
             <h3>Selecione o Tipo de Pallet</h3>
             <div class="tipo-options">
-                <button id="tipo-volumetria-alta" class="btn-primary" style="margin-bottom: 15px;">📦 Volumetria
-                    Alta</button>
+                <button id="tipo-volumetria-alta" class="btn-primary" style="margin-bottom: 15px;">📦 +20
+                    VOLUMES</button>
                 <button id="tipo-agendamento" class="btn-warning" style="margin-bottom: 15px;">📅 Agendamento</button>
                 <button id="tipo-diversos" class="btn-secondary">📦 Diversos</button>
             </div>
@@ -68,7 +68,7 @@
 
     <div id="pallet-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>Novo Pallet - Volumetria Alta</h3>
+            <h3>Novo Pallet - +20 Volumes</h3>
             <form id="pallet-form">
                 <input type="text" id="nf" placeholder="Número Fiscal" required>
                 <input type="text" id="recebedor" placeholder="Recebedor" required>
@@ -76,6 +76,9 @@
                 <input type="text" id="estado" placeholder="UF" maxlength="2" required>
                 <input type="text" id="cidade" placeholder="Cidade" required>
                 <input type="number" id="maxVolumes" placeholder="Volumes Totais" min="1" required>
+                <textarea id="subrota" placeholder="Subrota / Subregião (ex: ZONA SUL, CENTRO, BAIRRO X)" rows="3"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
+                    required></textarea>
 
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>
@@ -94,6 +97,10 @@
                 <input type="text" id="agendamento-hub" placeholder="Unidade" required>
                 <input type="text" id="agendamento-estado" placeholder="UF" maxlength="2" required>
                 <input type="text" id="agendamento-cidade" placeholder="Cidade" required>
+                <textarea id="agendamento-subrota" placeholder="Subrota / Subregião (ex: ZONA SUL, CENTRO, BAIRRO X)"
+                    rows="3"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
+                    required></textarea>
 
                 <div style="margin: 15px 0;">
                     <label style="display: block; margin-bottom: 8px; font-weight: bold;">📦 Tipo de Volume</label>
@@ -147,6 +154,10 @@
             <form id="pallet-diversos-form">
                 <input type="text" id="hub-diversos" placeholder="Unidade" required>
                 <input type="text" id="estado-diversos" placeholder="UF" maxlength="2" required>
+                <textarea id="subrota-diversos" placeholder="Subrota / Subregião (ex: ZONA SUL, CENTRO, BAIRRO X)"
+                    rows="3"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
+                    required></textarea>
 
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>

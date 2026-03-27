@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('estado').value = '';
     document.getElementById('cidade').value = '';
     document.getElementById('maxVolumes').value = '';
+    document.getElementById('subrota').value = '';
   }
 
   function resetFormularioAgendamento() {
@@ -93,6 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('agendamento-cidade').value = '';
     document.getElementById('agendamento-maxVolumes').value = '';
     document.getElementById('agendamento-volumes-texto').value = 'DIVERSOS';
+    document.getElementById('agendamento-subrota').value = '';
 
     document.querySelector('input[name="agendamento-volume-tipo"][value="fixo"]').checked = true;
     document.getElementById('agendamento-volumes-fixo').style.display = 'block';
@@ -108,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function resetFormularioDiversos() {
     document.getElementById('hub-diversos').value = '';
     document.getElementById('estado-diversos').value = '';
+    document.getElementById('subrota-diversos').value = '';
   }
 
   async function salvarObservacaoAtual() {
@@ -209,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
         hub: document.getElementById('hub').value,
         estado: document.getElementById('estado').value,
         cidade: document.getElementById('cidade').value,
-        maxVolumes: document.getElementById('maxVolumes').value
+        maxVolumes: document.getElementById('maxVolumes').value,
+        subrota: document.getElementById('subrota').value
       };
       await window.palletService.create(dados, 'VOLUMETRIA_ALTA');
       document.getElementById('pallet-modal').classList.add('hidden');
@@ -254,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function () {
         volumesDiversos: volumesDiversos,
         volumesTexto: volumesTexto,
         dataAgendamento: dataAgendamento,
-        dataAgendamentoTipo: dataTipo
+        dataAgendamentoTipo: dataTipo,
+        subrota: document.getElementById('agendamento-subrota').value
       };
 
       await window.palletService.create(dados, 'AGENDAMENTO');
@@ -267,7 +272,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const dados = {
         hub: document.getElementById('hub-diversos').value,
         estado: document.getElementById('estado-diversos').value,
-        cidade: ''
+        cidade: '',
+        subrota: document.getElementById('subrota-diversos').value
       };
       await window.palletService.create(dados, 'DIVERSOS');
       document.getElementById('pallet-diversos-modal').classList.add('hidden');
@@ -471,6 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <strong>Volumes:</strong> ${volumesDisplay}<br>
                 ${isAgendamento && p.dataAgendamento ? `<strong>📅 Data:</strong> ${p.dataAgendamento}<br>` : ''}
                 <strong>Status:</strong> ${p.agendamentoMarcado ? '📅 AGENDADO' : '📦 BOLSÃO'}<br>
+                ${p.subrota ? `<strong>📍 Subrota:</strong> ${p.subrota}<br>` : ''}
                 ${p.observacao ? `<strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
@@ -505,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <strong>UF:</strong> ${p.estado}<br>
                 <strong>Cidade:</strong> DIVERSOS<br>
                 <strong>Volumes:</strong> DIVERSOS
+                ${p.subrota ? `<br><strong>📍 Subrota:</strong> ${p.subrota}` : ''}
                 ${p.observacao ? `<br><strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
@@ -631,6 +639,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <strong>${volumesDisplay}</strong>
                     </div>
                 </div>
+                ${p.subrota ? `
+                <div style="margin-top: 10px; padding: 8px; background: #fff8e7; border-radius: 8px; font-size: 12px; color: #e67e22; border-left: 3px solid #f39c12;">
+                    📍 ${p.subrota}
+                </div>
+                ` : ''}
                 ${isAgendamento && p.dataAgendamento ? `
                 <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: 12px; color: #e67e22; border-left: 3px solid #f39c12;">
                     📅 ${p.dataAgendamento}
@@ -671,6 +684,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
                             <div class="info-item"><small>Volumes</small><strong>${volumesAnexo}</strong></div>
                         </div>
+                        ${anexo.subrota ? `
+                        <div style="margin-top: 8px; padding: 6px; background: #fff8e7; border-radius: 6px; font-size: 11px; color: #e67e22;">
+                            📍 ${anexo.subrota}
+                        </div>
+                        ` : ''}
                         ${anexo.observacao ? `
                         <div style="margin-top: 8px; padding: 6px; background: #fff3e0; border-radius: 6px; font-size: 11px; color: #e67e22;">
                             📝 ${anexo.observacao}
@@ -716,6 +734,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="agendamento-item">
                 <div class="agendamento-info">
                     ${a.displayString}
+                    ${a.subrota ? `<div style="font-size: 12px; color: #e67e22; margin-top: 4px;">📍 ${a.subrota}</div>` : ''}
                     <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
                 </div>
             </div>
@@ -764,6 +783,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div><small>Volumes</small><br>${volumesDisplay}</div>
                         <div><small>Finalizado</small><br>${dataFinalizacao}</div>
                     </div>
+                    ${p.subrota ? `
+                    <div style="margin-top: 10px; padding: 8px; background: #fff8e7; border-radius: 8px; font-size: 12px; color: #e67e22;">
+                        📍 ${p.subrota}
+                    </div>
+                    ` : ''}
                     ${isAgendamento && p.dataAgendamento ? `
                     <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: 12px; color: #e67e22;">
                         📅 ${p.dataAgendamento}

@@ -370,7 +370,8 @@ h2 {
 }
 
 .modal-content input,
-.modal-content select {
+.modal-content select,
+.modal-content textarea {
   width: 100%;
   padding: 16px;
   margin: 8px 0;
@@ -382,8 +383,14 @@ h2 {
   touch-action: manipulation;
 }
 
+.modal-content textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
 .modal-content input:focus,
-.modal-content select:focus {
+.modal-content select:focus,
+.modal-content textarea:focus {
   outline: none;
   border-color: #3498db;
   background: white;

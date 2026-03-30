@@ -401,7 +401,7 @@ class PalletService {
         let isDiversos = pallet.tipo === 'DIVERSOS';
         let isAgendamento = pallet.tipo === 'AGENDAMENTO';
 
-        const hubComSubrota = pallet.subrota ? `${pallet.hub} ${pallet.subrota}` : pallet.hub;
+        const subrotaDisplay = pallet.subrota ? `${pallet.hub} ${pallet.subrota}` : '';
 
         if (pallet.tipo === 'VOLUMETRIA_ALTA') {
             tituloPallet = 'NOTA INFORMATIVA | +20 VOLUMES';
@@ -473,7 +473,7 @@ class PalletService {
         const subrotaHtml = pallet.subrota ? `
         <div style="margin-top: 8px; padding: 8px; background: #fff8e7; border-radius: 8px; border-left: 3px solid #f39c12;">
             <span style="font-size: 10px; color: #777;">SUBROTA / SUBREGIÃO:</span><br>
-            <strong style="font-size: 14px; white-space: pre-wrap;">${hubComSubrota}</strong>
+            <strong style="font-size: 14px; white-space: pre-wrap;">${subrotaDisplay}</strong>
         </div>
     ` : '';
 
@@ -485,7 +485,7 @@ class PalletService {
             <div style="display: flex; gap: 10mm; align-items: flex-start;">
                 <div style="flex: 2;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm;">
-                        <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubComSubrota}</strong></div>
+                        <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubDisplay}</strong></div>
                         <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 18px;">${notaFiscalDisplay}</strong></div>
                         <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 18px;">${recebedorDisplay}</strong></div>
                         <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 18px;">${ufCidadeDisplay}</strong></div>
@@ -503,7 +503,7 @@ class PalletService {
             expedicaoContent = `
             <div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; max-width: 400px;">
-                    <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubComSubrota}</strong></div>
+                    <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubDisplay}</strong></div>
                     <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 18px;">${notaFiscalDisplay}</strong></div>
                     <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 18px;">${recebedorDisplay}</strong></div>
                     <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 18px;">${ufCidadeDisplay}</strong></div>

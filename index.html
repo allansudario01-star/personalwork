@@ -76,10 +76,8 @@
                 <input type="text" id="estado" placeholder="UF" maxlength="2" required>
                 <input type="text" id="cidade" placeholder="Cidade" required>
                 <input type="number" id="maxVolumes" placeholder="Volumes Totais" min="1" required>
-                <textarea id="subrota" placeholder="Subrota / Subregião" rows="3"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
-                    required></textarea>
-
+                <input type="text" id="subrota" placeholder="Subrota (apenas números)" pattern="\d*" inputmode="numeric"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>
                     <button type="button" id="close-modal">Cancelar</button>
@@ -97,9 +95,8 @@
                 <input type="text" id="agendamento-hub" placeholder="Unidade" required>
                 <input type="text" id="agendamento-estado" placeholder="UF" maxlength="2" required>
                 <input type="text" id="agendamento-cidade" placeholder="Cidade" required>
-                <textarea id="agendamento-subrota" placeholder="Subrota / Subregião" rows="3"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
-                    required></textarea>
+                <input type="text" id="agendamento-subrota" placeholder="Subrota (apenas números)" pattern="\d*"
+                    inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 
                 <div style="margin: 15px 0;">
                     <label style="display: block; margin-bottom: 8px; font-weight: bold;">📦 Tipo de Volume</label>
@@ -153,10 +150,8 @@
             <form id="pallet-diversos-form">
                 <input type="text" id="hub-diversos" placeholder="Unidade" required>
                 <input type="text" id="estado-diversos" placeholder="UF" maxlength="2" required>
-                <textarea id="subrota-diversos" placeholder="Subrota / Subregião" rows="3"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; margin: 8px 0;"
-                    required></textarea>
-
+                <input type="text" id="subrota-diversos" placeholder="Subrota (apenas números)" pattern="\d*"
+                    inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>
                     <button type="button" id="close-diversos-modal">Cancelar</button>
@@ -221,15 +216,16 @@
         </div>
     </div>
 
-    <div id="anexar-imagem-modal" class="modal hidden">
+    <div id="codigo-lista-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>Anexar Imagem (QR Code)</h3>
-            <p>Deseja anexar uma imagem ao rodapé da etiqueta?</p>
-            <input type="file" id="imagem-qrcode" accept="image/*">
-            <div class="form-actions" style="margin-top: 20px;">
-                <button id="confirmar-imprimir" class="btn-primary">Imprimir com Imagem</button>
-                <button id="imprimir-sem-imagem" class="btn-secondary">Imprimir sem Imagem</button>
-                <button id="cancelar-imagem-modal" class="btn-danger">Cancelar</button>
+            <h3>Código da Lista de QR Codes</h3>
+            <p>Digite o código da lista gerada pelo aplicativo (opcional)</p>
+            <input type="text" id="codigo-lista-input" placeholder="Ex: 100000095216969"
+                style="width: 100%; padding: 15px; margin: 15px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; font-family: monospace;">
+            <div class="form-actions">
+                <button id="confirmar-imprimir-codigo" class="btn-primary">Imprimir com Código</button>
+                <button id="imprimir-sem-codigo" class="btn-secondary">Imprimir sem Código</button>
+                <button id="cancelar-codigo-modal" class="btn-danger">Cancelar</button>
             </div>
         </div>
     </div>

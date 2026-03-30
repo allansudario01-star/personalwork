@@ -421,8 +421,6 @@ document.addEventListener('DOMContentLoaded', function () {
       observacaoTextarea.value = p.observacao || '';
     }
 
-    const hubComSubrota = p.subrota ? `${p.hub} ${p.subrota}` : p.hub;
-
     if (isAgendamento) {
       modalTitle.innerText = `Ajustar Pallet Agendado - ${p.notaFiscal}`;
       agendamentoContainer.style.display = 'block';
@@ -455,16 +453,21 @@ document.addEventListener('DOMContentLoaded', function () {
     if (isVolumetriaAlta || isAgendamento) {
       const volumesDisplay = p.volumesDiversos ? p.volumesTexto || 'DIVERSOS' : `${p.volumesAtuais || 0} / ${p.maxVolumes || '?'}`;
 
+      let subrotaInfo = '';
+      if (p.subrota) {
+        subrotaInfo = `<br><strong>📍 Subrota:</strong> ${p.hub} ${p.subrota}`;
+      }
+
       infoDiv.innerHTML = `
             <div>
                 <strong>Número Fiscal:</strong> ${p.notaFiscal}<br>
                 <strong>Recebedor:</strong> ${p.recebedor}<br>
-                <strong>Unidade:</strong> ${hubComSubrota}<br>
+                <strong>Unidade:</strong> ${p.hub}<br>
                 <strong>UF:</strong> ${p.estado}<br>
                 <strong>Cidade:</strong> ${p.cidade}<br>
                 <strong>Volumes:</strong> ${volumesDisplay}<br>
                 ${isAgendamento && p.dataAgendamento ? `<strong>📅 Data:</strong> ${p.dataAgendamento}<br>` : ''}
-                <strong>Status:</strong> ${p.agendamentoMarcado ? '📅 AGENDADO' : '📦 BOLSÃO'}<br>
+                <strong>Status:</strong> ${p.agendamentoMarcado ? '📅 AGENDADO' : '📦 BOLSÃO'}${subrotaInfo}<br>
                 ${p.observacao ? `<strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
@@ -493,13 +496,17 @@ document.addEventListener('DOMContentLoaded', function () {
         saveButton.style.display = 'none';
       }
     } else if (p.tipo === 'DIVERSOS') {
+      let subrotaInfo = '';
+      if (p.subrota) {
+        subrotaInfo = `<br><strong>📍 Subrota:</strong> ${p.hub} ${p.subrota}`;
+      }
       infoDiv.innerHTML = `
             <div>
-                <strong>Unidade:</strong> ${hubComSubrota}<br>
+                <strong>Unidade:</strong> ${p.hub}<br>
                 <strong>UF:</strong> ${p.estado}<br>
                 <strong>Cidade:</strong> DIVERSOS<br>
-                <strong>Volumes:</strong> DIVERSOS
-                ${p.observacao ? `<br><strong>📝 Obs:</strong> ${p.observacao}` : ''}
+                <strong>Volumes:</strong> DIVERSOS${subrotaInfo}<br>
+                ${p.observacao ? `<strong>📝 Obs:</strong> ${p.observacao}` : ''}
             </div>
         `;
       volumeControls.innerHTML = `<div style="text-align: center; color: #7f8c8d;">Não é possível ajustar volumes para pallets de diversos.</div>`;
@@ -598,8 +605,6 @@ document.addEventListener('DOMContentLoaded', function () {
         volumesDisplay = `${p.volumesAtuais || 0} / ${p.maxVolumes || '?'}`;
       }
 
-      const hubComSubrota = p.subrota ? `${p.hub} ${p.subrota}` : p.hub;
-
       html += `
             <div class="${cardClass}" style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -614,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div class="info-item">
                         <small>Unidade/UF</small>
-                        <strong>${hubComSubrota} - ${p.estado}</strong>
+                        <strong>${p.hub} - ${p.estado}</strong>
                     </div>
                     ${!isDiversos ? `
                     <div class="info-item">
@@ -629,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 ${p.subrota ? `
                 <div style="margin-top: 10px; padding: 8px; background: #fff8e7; border-radius: 8px; font-size: 12px; color: #e67e22; border-left: 3px solid #f39c12;">
-                    📍 ${hubComSubrota}
+                    📍 ${p.hub} ${p.subrota}
                 </div>
                 ` : ''}
                 ${isAgendamento && p.dataAgendamento ? `
@@ -661,7 +666,6 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const anexo of anexos) {
           const agendadoAnexo = anexo.tipo === 'VOLUMETRIA_ALTA' ? anexo.agendamentoMarcado : false;
           const volumesAnexo = `${anexo.volumesAtuais} / ${anexo.maxVolumes}`;
-          const hubAnexoComSubrota = anexo.subrota ? `${anexo.hub} ${anexo.subrota}` : anexo.hub;
           html += `
                     <div class="pallet-card anexado" style="margin-bottom: 10px; background: #f9f9f9; border-left: 4px solid #f39c12;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -670,12 +674,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
                             <div class="info-item"><small>Recebedor</small><strong>${anexo.recebedor}</strong></div>
-                            <div class="info-item"><small>Unidade/UF</small><strong>${hubAnexoComSubrota} - ${anexo.estado}</strong></div>
+                            <div class="info-item"><small>Unidade/UF</small><strong>${anexo.hub} - ${anexo.estado}</strong></div>
                             <div class="info-item"><small>Volumes</small><strong>${volumesAnexo}</strong></div>
                         </div>
                         ${anexo.subrota ? `
                         <div style="margin-top: 8px; padding: 6px; background: #fff8e7; border-radius: 6px; font-size: 11px; color: #e67e22;">
-                            📍 ${hubAnexoComSubrota}
+                            📍 ${anexo.hub} ${anexo.subrota}
                         </div>
                         ` : ''}
                         ${anexo.observacao ? `
@@ -719,12 +723,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let html = '';
     agendamentos.forEach(a => {
-      const hubComSubrota = a.subrota ? `${a.hub} ${a.subrota}` : a.hub;
       html += `
             <div class="agendamento-item">
                 <div class="agendamento-info">
-                    ${a.uf}/${hubComSubrota}/${a.recebedor}/${a.tipo}
-                    ${a.subrota ? `<div style="font-size: 12px; color: #e67e22; margin-top: 4px;">📍 ${hubComSubrota}</div>` : ''}
+                    ${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}
+                    ${a.subrota ? `<div style="font-size: 12px; color: #e67e22; margin-top: 4px;">📍 ${a.hub} ${a.subrota}</div>` : ''}
                     <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
                 </div>
             </div>
@@ -758,8 +761,6 @@ document.addEventListener('DOMContentLoaded', function () {
         volumesDisplay = `${p.volumesAtuais}/${p.maxVolumes}`;
       }
 
-      const hubComSubrota = p.subrota ? `${p.hub} ${p.subrota}` : p.hub;
-
       html += `
                 <div class="finalizado-card">
                     <div class="finalizado-header">
@@ -771,13 +772,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <div class="finalizado-info">
                         <div><small>Recebedor</small><br>${p.recebedor || 'DIVERSOS'}</div>
-                        <div><small>Unidade/UF</small><br>${hubComSubrota} - ${p.estado}</div>
+                        <div><small>Unidade/UF</small><br>${p.hub} - ${p.estado}</div>
                         <div><small>Volumes</small><br>${volumesDisplay}</div>
                         <div><small>Finalizado</small><br>${dataFinalizacao}</div>
                     </div>
                     ${p.subrota ? `
                     <div style="margin-top: 10px; padding: 8px; background: #fff8e7; border-radius: 8px; font-size: 12px; color: #e67e22;">
-                        📍 ${hubComSubrota}
+                        📍 ${p.hub} ${p.subrota}
                     </div>
                     ` : ''}
                     ${isAgendamento && p.dataAgendamento ? `

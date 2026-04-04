@@ -9,42 +9,15 @@ class PalletService {
 
     setAgendamentoService(service) {
         this.agendamentoService = service;
-        this.atualizarStatusAgendamentoEmTodosPallets();
     }
 
     setupRealtimeListener() {
         if (window.db) {
             window.db.collection('agendamentos').onSnapshot(() => {
                 if (window.renderizarPallets) {
-                    this.atualizarStatusAgendamentoEmTodosPallets();
                     window.renderizarPallets();
                 }
             });
-        }
-    }
-
-    verificarAgendamento(pallet) {
-        if (!this.agendamentoService || pallet.tipo !== 'VOLUMETRIA_ALTA') {
-            return false;
-        }
-
-        const agendamentos = this.agendamentoService.listar();
-        return agendamentos.some(a =>
-            a.uf === pallet.estado &&
-            a.hub === pallet.hub &&
-            a.recebedor === pallet.recebedor
-        );
-    }
-
-    atualizarStatusAgendamentoEmTodosPallets() {
-        for (const [id, pallet] of this.pallets.entries()) {
-            if (pallet.tipo === 'VOLUMETRIA_ALTA') {
-                const isAgendado = this.verificarAgendamento(pallet);
-                if (pallet.agendamentoMarcado !== isAgendado) {
-                    pallet.agendamentoMarcado = isAgendado;
-                    this.saveToStorage();
-                }
-            }
         }
     }
 
@@ -54,8 +27,7 @@ class PalletService {
             try {
                 const lista = JSON.parse(saved);
                 lista.forEach(p => this.pallets.set(p.id, p));
-            } catch (e) {
-            }
+            } catch (e) { }
         }
 
         const finalizados = localStorage.getItem('palletsFinalizados');
@@ -63,8 +35,7 @@ class PalletService {
             try {
                 const lista = JSON.parse(finalizados);
                 lista.forEach(p => this.finalizados.set(p.id, p));
-            } catch (e) {
-            }
+            } catch (e) { }
         }
     }
 
@@ -88,54 +59,40 @@ class PalletService {
             status: 'ativo',
             bipado: false,
             palletsVinculados: [],
-            palletPrincipalId: null,
-            agendamentoMarcado: false,
-            observacao: '',
-            subrota: data.subrota ? data.subrota.toString().replace(/\D/g, '') : ''
+            palletPrincipalId: null
         };
 
         let novo;
+
         if (tipo === 'VOLUMETRIA_ALTA') {
             novo = {
                 ...basePallet,
                 notaFiscal: data.notaFiscal.toUpperCase().trim(),
                 recebedor: data.recebedor.toUpperCase().trim(),
-                hub: data.hub.toUpperCase().trim(),
+                hub: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 estado: data.estado.toUpperCase().trim(),
                 cidade: data.cidade.toUpperCase().trim(),
+                regiao: data.regiao ? data.regiao.toUpperCase().trim() : '',
+                subregiao: data.subregiao ? data.subregiao.toString().trim() : '',
                 maxVolumes: parseInt(data.maxVolumes),
-                volumesAtuais: 0
-            };
-        } else if (tipo === 'AGENDAMENTO') {
-            novo = {
-                ...basePallet,
-                notaFiscal: data.notaFiscal.toUpperCase().trim(),
-                recebedor: data.recebedor.toUpperCase().trim(),
-                hub: data.hub.toUpperCase().trim(),
-                estado: data.estado.toUpperCase().trim(),
-                cidade: data.cidade.toUpperCase().trim(),
-                maxVolumes: data.maxVolumes,
                 volumesAtuais: 0,
-                volumesDiversos: data.volumesDiversos || false,
-                volumesTexto: data.volumesTexto || 'DIVERSOS',
-                dataAgendamento: data.dataAgendamento || null,
-                dataAgendamentoTipo: data.dataAgendamentoTipo || null
+                volumesDiversos: false
             };
         } else {
             novo = {
                 ...basePallet,
                 notaFiscal: 'DIVERSOS',
                 recebedor: 'DIVERSOS',
-                hub: data.hub.toUpperCase().trim(),
+                hub: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 estado: data.estado.toUpperCase().trim(),
                 cidade: 'DIVERSOS',
+                regiao: data.regiao ? data.regiao.toUpperCase().trim() : '',
+                subregiao: data.subregiao ? data.subregiao.toString().trim() : '',
                 maxVolumes: null,
-                volumesAtuais: null
+                volumesAtuais: null,
+                volumesDiversos: true,
+                volumesTexto: ''
             };
-        }
-
-        if (tipo === 'VOLUMETRIA_ALTA') {
-            novo.agendamentoMarcado = this.verificarAgendamento(novo);
         }
 
         this.pallets.set(id, novo);
@@ -143,30 +100,9 @@ class PalletService {
 
         try {
             await window.db.collection('pallets').doc(id).set(novo);
-        } catch (e) {
-        }
+        } catch (e) { }
 
         return novo;
-    }
-
-    async salvarDataAgendamento(id, dataAgendamento, dataTipo) {
-        const pallet = this.pallets.get(id);
-        if (!pallet || pallet.tipo !== 'AGENDAMENTO') return;
-
-        pallet.dataAgendamento = dataAgendamento;
-        pallet.dataAgendamentoTipo = dataTipo;
-        pallet.ultimaAtualizacao = new Date().toISOString();
-
-        this.saveToStorage();
-
-        try {
-            await window.db.collection('pallets').doc(id).update({
-                dataAgendamento: pallet.dataAgendamento,
-                dataAgendamentoTipo: pallet.dataAgendamentoTipo,
-                ultimaAtualizacao: pallet.ultimaAtualizacao
-            });
-        } catch (e) {
-        }
     }
 
     async anexarPallet(idPalletPrincipal) {
@@ -184,8 +120,7 @@ class PalletService {
             ultimaAtualizacao: new Date().toISOString(),
             status: 'ativo',
             volumesAtuais: 0,
-            palletsVinculados: [],
-            agendamentoMarcado: palletPrincipal.agendamentoMarcado
+            palletsVinculados: []
         };
 
         this.pallets.set(novoId, palletAnexado);
@@ -203,15 +138,15 @@ class PalletService {
             await window.db.collection('pallets').doc(idPalletPrincipal).update({
                 palletsVinculados: palletPrincipal.palletsVinculados
             });
-        } catch (e) {
-        }
+        } catch (e) { }
 
         return palletAnexado;
     }
 
     async updateVolumes(id, novosVolumes) {
         const pallet = this.pallets.get(id);
-        if (!pallet || pallet.tipo !== 'VOLUMETRIA_ALTA') return;
+        if (!pallet || pallet.tipo === 'DIVERSOS') return;
+        if (pallet.volumesDiversos) return;
 
         pallet.volumesAtuais = Math.min(novosVolumes, pallet.maxVolumes);
         if (pallet.volumesAtuais < 0) pallet.volumesAtuais = 0;
@@ -225,28 +160,7 @@ class PalletService {
                 volumesAtuais: pallet.volumesAtuais,
                 ultimaAtualizacao: pallet.ultimaAtualizacao
             });
-        } catch (e) {
-        }
-    }
-
-    async salvarObservacao(id, observacao) {
-        const pallet = this.pallets.get(id);
-        if (!pallet) return;
-
-        pallet.observacao = observacao ? observacao.trim() : '';
-        pallet.ultimaAtualizacao = new Date().toISOString();
-
-        this.saveToStorage();
-
-        try {
-            await window.db.collection('pallets').doc(id).update({
-                observacao: pallet.observacao,
-                ultimaAtualizacao: pallet.ultimaAtualizacao
-            });
-        } catch (e) {
-        }
-
-        return pallet.observacao;
+        } catch (e) { }
     }
 
     async finalizar(id, bipado = false) {
@@ -289,8 +203,7 @@ class PalletService {
         try {
             await window.db.collection('pallets').doc(id).delete();
             await window.db.collection('palletsFinalizados').doc(id).set(pallet);
-        } catch (e) {
-        }
+        } catch (e) { }
     }
 
     async excluir(id) {
@@ -311,8 +224,7 @@ class PalletService {
 
         try {
             await window.db.collection('pallets').doc(id).delete();
-        } catch (e) {
-        }
+        } catch (e) { }
     }
 
     listar(buscaNF = '') {
@@ -349,25 +261,21 @@ class PalletService {
     }
 
     obterTotalPalletsGrupo(pallet) {
-        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
-
+        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return null;
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
             if (principal) {
                 return 1 + (principal.palletsVinculados?.length || 0);
             }
         }
-
         return 1 + (pallet.palletsVinculados?.length || 0);
     }
 
     obterIndiceNoGrupo(pallet) {
-        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return 1;
-
+        if (pallet.tipo !== 'VOLUMETRIA_ALTA') return null;
         if (!pallet.palletPrincipalId) {
             return 1;
         }
-
         const principal = this.pallets.get(pallet.palletPrincipalId);
         if (principal && principal.palletsVinculados) {
             const index = principal.palletsVinculados.indexOf(pallet.id);
@@ -375,7 +283,6 @@ class PalletService {
                 return index + 2;
             }
         }
-
         return 1;
     }
 
@@ -384,360 +291,518 @@ class PalletService {
         return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(codigo)}`;
     }
 
-    gerarEtiquetaHTML(pallet, isAgendado, codigoLista = null) {
-        const dataAtual = new Date();
-        const dataSeparacao = dataAtual.toLocaleDateString('pt-BR');
-        const horaAtual = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const dataEmBranco = '__/__/____';
-        const horaEmBranco = '__:__';
-
-        let tituloPallet = 'PALLET';
-        let notaFiscalDisplay = pallet.notaFiscal;
-        let recebedorDisplay = pallet.recebedor;
-        let hubDisplay = pallet.hub;
-        let ufCidadeDisplay = '';
-        let volumesDisplay = '';
-        let palletsDisplay = '';
-        let isDiversos = pallet.tipo === 'DIVERSOS';
-        let isAgendamento = pallet.tipo === 'AGENDAMENTO';
-
-        const subrotaDisplay = pallet.subrota ? `${pallet.hub} ${pallet.subrota}` : '';
-
-        if (pallet.tipo === 'VOLUMETRIA_ALTA') {
-            tituloPallet = 'NOTA INFORMATIVA | +20 VOLUMES';
-            ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
-            volumesDisplay = `
-        <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
-            <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">VOLUMES</div>
-            <div>
-                <span style="font-size: 28px; font-weight: bold;">${pallet.volumesAtuais}</span>
-                <span style="font-size: 16px;"> / ${pallet.maxVolumes}</span>
-            </div>
-        </div>
-    `;
-            const totalPallets = this.obterTotalPalletsGrupo(pallet);
-            const indiceAtual = this.obterIndiceNoGrupo(pallet);
-            palletsDisplay = `
-        <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
-            <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">PALLETS</div>
-            <div>
-                <span style="font-size: 28px; font-weight: bold;">${indiceAtual}</span>
-                <span style="font-size: 16px;"> / ${totalPallets}</span>
-            </div>
-        </div>
-    `;
-        } else if (pallet.tipo === 'AGENDAMENTO') {
-            tituloPallet = 'NOTA INFORMATIVA | AGENDAMENTO';
-            ufCidadeDisplay = `${pallet.estado} - ${pallet.cidade}`;
-
-            if (pallet.volumesDiversos) {
-                volumesDisplay = `
-            <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
-                <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">VOLUMES</div>
-                <div>
-                    <span style="font-size: 22px; font-weight: bold;">${pallet.volumesTexto || 'DIVERSOS'}</span>
-                </div>
-            </div>
-        `;
-            } else {
-                volumesDisplay = `
-            <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
-                <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">VOLUMES</div>
-                <div>
-                    <span style="font-size: 28px; font-weight: bold;">${pallet.volumesAtuais || 0}</span>
-                    <span style="font-size: 16px;"> / ${pallet.maxVolumes || '?'}</span>
-                </div>
-            </div>
-        `;
-            }
-            palletsDisplay = '';
-        } else {
-            tituloPallet = 'NOTA INFORMATIVA | DIVERSOS';
-            notaFiscalDisplay = 'DIVERSOS';
-            recebedorDisplay = 'DIVERSOS';
-            ufCidadeDisplay = `${pallet.estado} - DIVERSOS`;
-            volumesDisplay = `
-        <div style="text-align: center; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #ddd;">
-            <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">VOLUMES</div>
-            <div>
-                <span style="font-size: 22px; font-weight: bold;">DIVERSOS</span>
-            </div>
-        </div>
-    `;
-            palletsDisplay = '';
+    getSubrotaDisplay(pallet) {
+        if (pallet.subregiao && pallet.regiao) {
+            return `${pallet.regiao}${pallet.subregiao}`;
         }
-
-        const marcarAgendamento = pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.agendamentoMarcado;
-        const agendamentoChecked = marcarAgendamento ? 'background-color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact;' : '';
-
-        const subrotaHtml = pallet.subrota ? `
-    <div style="margin-top: 8px; padding: 8px; background: #fff8e7; border-radius: 8px; border-left: 3px solid #f39c12;">
-        <span style="font-size: 10px; color: #777;">SUBROTA / SUBREGIÃO:</span><br>
-        <strong style="font-size: 14px; white-space: pre-wrap;">${subrotaDisplay}</strong>
-    </div>
-` : '';
-
-        let expedicaoContent = '';
-        const qrCodeUrl = codigoLista ? this.gerarQRCode(codigoLista) : null;
-
-        if (qrCodeUrl) {
-            expedicaoContent = `
-        <div style="display: flex; gap: 10mm; align-items: flex-start;">
-            <div style="flex: 2;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm;">
-                    <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubDisplay}</strong></div>
-                    <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 18px;">${notaFiscalDisplay}</strong></div>
-                    <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 18px;">${recebedorDisplay}</strong></div>
-                    <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 18px;">${ufCidadeDisplay}</strong></div>
-                </div>
-                ${subrotaHtml}
-            </div>
-            <div style="width: 1px; background: #ddd; align-self: stretch;"></div>
-            <div style="flex: 1; text-align: center;">
-                <img src="${qrCodeUrl}" style="width: 100%; max-width: 140px; height: auto; object-fit: contain; margin: 0 auto; display: block;" />
-                <div style="font-size: 9px; color: #555; margin-top: 5px; word-break: break-all;">${codigoLista}</div>
-            </div>
-        </div>
-    `;
-        } else {
-            expedicaoContent = `
-        <div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; max-width: 400px;">
-                <div><span style="font-size: 10px; color: #777;">UNIDADE</span><br><strong style="font-size: 18px;">${hubDisplay}</strong></div>
-                <div><span style="font-size: 10px; color: #777;">NÚMERO FISCAL</span><br><strong style="font-size: 18px;">${notaFiscalDisplay}</strong></div>
-                <div><span style="font-size: 10px; color: #777;">RECEBEDOR</span><br><strong style="font-size: 18px;">${recebedorDisplay}</strong></div>
-                <div><span style="font-size: 10px; color: #777;">UF/CIDADE</span><br><strong style="font-size: 18px;">${ufCidadeDisplay}</strong></div>
-            </div>
-            ${subrotaHtml}
-        </div>
-    `;
+        if (pallet.regiao) {
+            return pallet.regiao;
         }
-
-        return `
-    <div class="etiqueta-a4" style="
-        font-family: Arial, sans-serif;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        margin: 0;
-        padding: 15mm;
-        background: white;
-        box-sizing: border-box;
-        font-size: 14px;
-        page-break-after: avoid;
-        page-break-inside: avoid;
-        page-break-before: avoid;
-        position: relative;
-    ">
-        <div style="text-align: center; margin-bottom: 8mm; border-bottom: 1px solid #ddd; padding-bottom: 5mm;">
-            <h1 style="margin: 0; font-size: 26px; font-weight: bold;">${tituloPallet}</h1>
-            <p style="color: #888; margin: 4px 0 0 0; font-size: 11px;">${dataSeparacao} ${horaAtual}</p>
-        </div>
-
-        <div style="margin-bottom: 8mm;">
-            <h2 style="background: #f0f0f0; color: #333; padding: 5px 10px; border-radius: 6px; font-size: 15px; font-weight: bold; margin-bottom: 6mm; border-left: 4px solid #2c3e50;">EXPEDIÇÃO</h2>
-
-            ${expedicaoContent}
-
-            <div style="display: flex; gap: 12mm; justify-content: center; margin-top: 6mm;">
-                ${volumesDisplay}
-                ${palletsDisplay}
-            </div>
-
-            <div style="display: flex; gap: 12mm; margin-top: 6mm; flex-wrap: wrap;">
-                <div style="min-width: 100px;">
-                    <span style="font-size: 10px; color: #777;">DATA SEPARAÇÃO</span><br>
-                    <strong style="font-size: 15px;">${dataSeparacao}</strong>
-                </div>
-                <div style="flex: 1;">
-                    <span style="font-size: 10px; color: #777;">RESPONSÁVEL SEPARAÇÃO</span><br>
-                    <div style="border-bottom: 1px solid #999; width: 100%; height: 24px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 6mm;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10mm; flex-wrap: wrap;">
-                <div style="flex: 2; min-width: 200px;">
-                    <h2 style="background: #f0f0f0; color: #333; padding: 5px 10px; border-radius: 6px; font-size: 15px; font-weight: bold; margin-bottom: 6mm; border-left: 4px solid #f39c12;">SERVIÇO</h2>
-                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 6mm;">
-                        <div style="font-size: 11px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3mm;">
-                            <label style="display: flex; align-items: center; gap: 3mm; cursor: default;">
-                                <span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px;"></span>
-                                Entrega direta para o recebedor
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 3mm; cursor: default;">
-                                <span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px;"></span>
-                                Envio para unidade ou ponto de encontro
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 3mm; cursor: default;">
-                                <span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px;"></span>
-                                Interhub / Entrega para o recebedor
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 3mm; cursor: default;">
-                                <span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px; ${agendamentoChecked}"></span>
-                                Agendamento
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                ${isAgendamento ? `
-                <div style="flex: 1; min-width: 140px;">
-                    <h2 style="background: #f0f0f0; color: #333; padding: 5px 10px; border-radius: 6px; font-size: 15px; font-weight: bold; margin-bottom: 6mm; border-left: 4px solid #f39c12;">DATA AGENDAMENTO</h2>
-                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8mm 5mm; text-align: center; background: #fff8e7;">
-                        <div style="font-size: 16px; font-weight: bold; color: #e67e22;">
-                            ${pallet.dataAgendamento || 'AGUARDANDO DATA DE AGENDAMENTO'}
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-
-            <div style="margin-top: 6mm;">
-                <div style="font-weight: bold; font-size: 12px; margin-bottom: 2mm; color: #555;">VINCULAR NF:</div>
-                <div style="border-bottom: 1px solid #999; height: 28px; width: 100%;"></div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 6mm;">
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">DATA PREV. EMBARQUE:</span><br>
-                    <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">${dataEmBranco}</span>
-                </div>
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">LIBERADO:</span><br>
-                    <div style="display: flex; gap: 8mm; margin-top: 2px;">
-                        <label style="display: flex; align-items: center; gap: 2mm; cursor: default;">
-                            <span style="border: 1.5px solid #333; display: inline-block; width: 14px; height: 14px;"></span>
-                            <span style="font-size: 12px;">SIM</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 2mm; cursor: default;">
-                            <span style="border: 1.5px solid #333; display: inline-block; width: 14px; height: 14px;"></span>
-                            <span style="font-size: 12px;">NÃO</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 6mm;">
-            <h2 style="background: #f0f0f0; color: #333; padding: 5px 10px; border-radius: 6px; font-size: 15px; font-weight: bold; margin-bottom: 6mm; border-left: 4px solid #27ae60;">TRANSPORTE</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-bottom: 5mm;">
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">MOTORISTA PREVISTO:</span><br>
-                    <div style="border-bottom: 1px solid #999; height: 28px;"></div>
-                </div>
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">LIBERADO POR:</span><br>
-                    <div style="border-bottom: 1px solid #999; height: 28px;"></div>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10mm;">
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">DATA REALIZADA ENTREGA:</span><br>
-                    <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">${dataEmBranco}</span>
-                </div>
-                <div>
-                    <span style="font-size: 10px; font-weight: bold; color: #777;">HORA:</span><br>
-                    <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">${horaEmBranco}</span>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-top: 4mm;">
-            <div style="font-weight: bold; font-size: 12px; margin-bottom: 2mm; color: #555;">OBSERVAÇÃO:</div>
-            <div style="border: 1px solid #ddd; min-height: 60px; border-radius: 6px; padding: 8px;">
-                ${pallet.observacao ? `<div style="color: #2c3e50; font-size: 11px; white-space: pre-wrap;">${pallet.observacao}</div>` : ''}
-            </div>
-        </div>
-    </div>
-`;
+        return pallet.subregiao || '';
     }
 
-    imprimirEtiqueta(pallet, isAgendado, codigoLista = null) {
-        const html = this.gerarEtiquetaHTML(pallet, isAgendado, codigoLista);
+    gerarEtiquetaHTML(pallet, codigoLista = null) {
+        const dataAtual = new Date();
+        const dataHora = dataAtual.toLocaleString('pt-BR');
+        const qrCodeUrl = codigoLista ? this.gerarQRCode(codigoLista) : null;
+        const isDiversos = pallet.tipo === 'DIVERSOS';
 
+        let volumesDisplay = '';
+        if (isDiversos) {
+            volumesDisplay = '______________';
+        } else if (pallet.volumesDiversos) {
+            volumesDisplay = pallet.volumesTexto || '______________';
+        } else {
+            volumesDisplay = `${pallet.volumesAtuais || 0} / ${pallet.maxVolumes || ''}`;
+        }
+
+        let palletsDisplay = '';
+        if (!isDiversos && pallet.tipo === 'VOLUMETRIA_ALTA') {
+            const totalPallets = this.obterTotalPalletsGrupo(pallet);
+            const indiceAtual = this.obterIndiceNoGrupo(pallet);
+            if (totalPallets !== null && indiceAtual !== null) {
+                palletsDisplay = `${indiceAtual} / ${totalPallets}`;
+            }
+        }
+
+        const subrotaDisplay = this.getSubrotaDisplay(pallet);
+
+        return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Formulário Operacional - ${pallet.notaFiscal || 'DIVERSOS'}</title>
+<style>
+    @page {
+        size: A4;
+        margin: 6mm 10mm;
+    }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        background: white;
+        font-size: 10px;
+    }
+    .page {
+        width: 100%;
+    }
+    .section-title {
+        background: #e0e0e0;
+        padding: 1.5mm 4mm;
+        font-weight: bold;
+        font-size: 11px;
+        border: 1px solid #aaa;
+        margin-top: 3mm;
+    }
+    .section-content {
+        border: 1px solid #aaa;
+        border-top: none;
+        padding: 3mm 4mm;
+    }
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4mm;
+    }
+    .campo-container {
+        font-size: 10px;
+        font-weight: bold;
+    }
+    .campo-linha {
+        border-bottom: 1px solid #000;
+        min-width: 55mm;
+        display: inline-block;
+        margin-left: 3px;
+    }
+    .info-row {
+        display: flex;
+        gap: 5mm;
+        margin-bottom: 4mm;
+        justify-content: space-between;
+    }
+    .info-block {
+        flex: 1;
+    }
+    .info-label {
+        font-size: 8px;
+        font-weight: bold;
+        margin-bottom: 1mm;
+        color: #333;
+    }
+    .info-value {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .cidade-value {
+        font-size: 13px;
+    }
+    .two-columns {
+        display: flex;
+        gap: 5mm;
+        margin-bottom: 3mm;
+    }
+    .left-col {
+        flex: 2;
+    }
+    .right-col {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+    }
+    .qrcode-box {
+        width: 36mm;
+        height: 36mm;
+        border: 1px solid #aaa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+    }
+    .qrcode-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    .embarcador-item {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 3mm;
+    }
+    .embarcador-label {
+        font-size: 10px;
+        font-weight: bold;
+        width: 22mm;
+    }
+    .embarcador-linha {
+        border-bottom: 1px solid #000;
+        flex: 1;
+        margin-left: 3mm;
+        height: 5mm;
+    }
+    .recebedor-text {
+        font-size: 11px;
+        font-weight: bold;
+        margin-left: 3mm;
+    }
+    .volumes-row {
+        display: flex;
+        gap: 10mm;
+        margin-bottom: 3mm;
+    }
+    .volume-card, .pallet-card {
+        flex: 1;
+        border: 1.5px solid #000;
+        border-radius: 5px;
+        padding: 2mm 3mm;
+        text-align: center;
+    }
+    .volume-label, .pallet-label {
+        font-size: 8px;
+        font-weight: bold;
+        margin-bottom: 1mm;
+    }
+    .volume-number, .pallet-number {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .checkbox-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3mm;
+        flex-wrap: wrap;
+    }
+    .checkbox-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 2mm;
+    }
+    .checkbox {
+        width: 3.5mm;
+        height: 3.5mm;
+        border: 1px solid #000;
+        display: inline-block;
+        background: white;
+    }
+    .checkbox-label {
+        font-size: 9px;
+    }
+    .section-label {
+        font-weight: bold;
+        font-size: 9px;
+    }
+    .full-width {
+        width: 100%;
+    }
+    .resp-linha, .planejamento-linha {
+        border-bottom: 1px solid #000;
+        flex: 1;
+        margin-left: 5mm;
+        height: 5mm;
+    }
+    .destinatario-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 3mm;
+        flex-wrap: wrap;
+    }
+    .nf-text {
+        font-size: 11px;
+        font-weight: bold;
+    }
+    .linha-com-label {
+        display: flex;
+        align-items: baseline;
+        margin-top: 3mm;
+    }
+    .servico-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5mm;
+        flex-wrap: wrap;
+    }
+    .servico-check-group {
+        display: flex;
+        gap: 2mm;
+        align-items: center;
+        flex: 2;
+    }
+    .servico-data {
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        gap: 2mm;
+    }
+    .servico-linha {
+        border-bottom: 1px solid #000;
+        width: 30mm;
+        height: 4mm;
+    }
+    .trechos-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .trechos-table td {
+        padding: 0.8mm 1.5mm;
+        vertical-align: top;
+        font-size: 9px;
+    }
+    .trecho-titulo {
+        font-weight: bold;
+        width: 12%;
+        font-size: 9px;
+    }
+    .campo-trecho {
+        border-bottom: 1px solid #000;
+        min-width: 22mm;
+        height: 4mm;
+        display: inline-block;
+    }
+    .campo-trecho-peq {
+        min-width: 14mm;
+    }
+    .trecho-label {
+        font-size: 9px;
+        font-weight: normal;
+    }
+    .no-print {
+        position: fixed;
+        bottom: 15px;
+        right: 15px;
+        padding: 8px 16px;
+        background: #2c3e50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 11px;
+        z-index: 1000;
+    }
+    @media print {
+        .no-print {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <div class="section-title">SEPARAÇÃO</div>
+    <div class="section-content">
+        <div class="header-row">
+            <div class="campo-container">Nº OS do Container: <span class="campo-linha"></span></div>
+            <div class="campo-container">Data/Hora: ${dataHora}</div>
+        </div>
+
+        <div class="info-row">
+            <div class="info-block"><div class="info-label">REGIÃO</div><div class="info-value">${pallet.regiao || ''}</div></div>
+            <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:16px;">${subrotaDisplay}</div></div>
+            <div class="info-block"><div class="info-label">CIDADE</div><div class="info-value cidade-value">${pallet.cidade || ''}</div></div>
+            <div class="info-block"><div class="info-label">UF</div><div class="info-value">${pallet.estado || ''}</div></div>
+        </div>
+
+        <div class="two-columns">
+            <div class="left-col">
+                <div class="embarcador-item">
+                    <div class="embarcador-label">Embarcador:</div>
+                    <div class="embarcador-linha"></div>
+                </div>
+                <div class="embarcador-item">
+                    <div class="embarcador-label">Recebedor:</div>
+                    <div class="recebedor-text">${pallet.recebedor || ''}</div>
+                </div>
+                <div class="volumes-row">
+                    <div class="volume-card">
+                        <div class="volume-label">VOLUMES</div>
+                        <div class="volume-number">${volumesDisplay}</div>
+                    </div>
+                    ${palletsDisplay ? `<div class="pallet-card">
+                        <div class="pallet-label">PALLETS</div>
+                        <div class="pallet-number">${palletsDisplay}</div>
+                    </div>` : ''}
+                </div>
+            </div>
+            <div class="right-col">
+                ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:36mm;"></div>'}
+            </div>
+        </div>
+
+        <div class="checkbox-row">
+            <div style="display: flex; gap: 6mm; align-items: center;">
+                <span class="section-label">CONFERÊNCIA:</span>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Completo</span></div>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Parcial</span></div>
+            </div>
+            <div style="display: flex; gap: 6mm; align-items: center;">
+                <span class="section-label">CONTÉM PERECÍVEIS:</span>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Sim</span></div>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Não</span></div>
+            </div>
+        </div>
+
+        <div class="destinatario-row">
+            <div style="display: flex; gap: 5mm; align-items: center;">
+                <span class="section-label">ÚNICO DESTINATÁRIO:</span>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Sim</span></div>
+                <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Não</span></div>
+            </div>
+            <div class="nf-text">Nº da NF: ${pallet.notaFiscal || ''}</div>
+        </div>
+
+        <div class="linha-com-label">
+            <div class="embarcador-label">Responsável por separar:</div>
+            <div class="resp-linha"></div>
+        </div>
+    </div>
+
+    <div class="section-title">SERVIÇO</div>
+    <div class="section-content">
+        <div class="servico-item">
+            <div class="servico-check-group"><span class="checkbox"></span><span>Entrega direta ao recebedor não exclusivo - alta volumetria (+30)</span></div>
+        </div>
+        <div class="servico-item">
+            <div class="servico-check-group"><span class="checkbox"></span><span>Entrega direta ao recebedor não exclusivo - fracionado (-30)</span></div>
+        </div>
+        <div class="servico-item">
+            <div class="servico-check-group"><span class="checkbox"></span><span>Entrega direta ao recebedor exclusivo (EPI)</span></div>
+            <div class="servico-data"><span>Data/Hora:</span><div class="servico-linha"></div></div>
+        </div>
+        <div class="servico-item">
+            <div class="servico-check-group"><span class="checkbox"></span><span>Crossdocking (quando há necessidade de seguir mais trechos na viagem)</span></div>
+        </div>
+        <div class="servico-item">
+            <div class="servico-check-group"><span class="checkbox"></span><span>Ponto de Encontro (quando não há necessidade de seguir outros trechos)</span></div>
+        </div>
+    </div>
+
+    <div class="section-title">TRANSFERÊNCIA</div>
+    <div class="section-content" style="padding: 1.5mm 2mm;">
+        <table class="trechos-table">
+            ${[1, 2, 3].map(i => `
+                <tr>
+                    <td class="trecho-titulo">Trecho 0${i}</td>
+                    <td><span class="trecho-label">Data/Hora:</span> <span class="campo-trecho"></span></td>
+                    <td><span class="trecho-label">Nº Viagem:</span> <span class="campo-trecho"></span></td>
+                    <td><span class="trecho-label">Doca:</span> <span class="campo-trecho campo-trecho-peq"></span></td>
+                </tr>
+                <tr>
+                    <td class="trecho-titulo"></td>
+                    <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+                </tr>
+                <tr>
+                    <td class="trecho-titulo"></td>
+                    <td colspan="3"><span class="trecho-label">Atividade:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Chegada:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Partida:</span> <span class="campo-trecho"></span></td>
+                </tr>
+                <tr>
+                    <td class="trecho-titulo"></td>
+                    <td colspan="3"><span class="trecho-label">Motorista:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Placa:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Tipo Veículo:</span> <span class="campo-trecho"></span></td>
+                </tr>
+                ${i < 3 ? '<tr><td colspan="4" style="padding: 0;"><hr style="margin: 0.5mm 0;" /></td></tr>' : ''}
+            `).join('')}
+        </table>
+    </div>
+
+    <div class="section-title">LAST MILE</div>
+    <div class="section-content" style="padding: 1.5mm 2mm;">
+        <table class="trechos-table">
+            <tr>
+                <td class="trecho-titulo">Trecho 04</td>
+                <td><span class="trecho-label">Data/Hora:</span> <span class="campo-trecho"></span></td>
+                <td><span class="trecho-label">Nº Viagem:</span> <span class="campo-trecho"></span></td>
+                <td><span class="trecho-label">Doca:</span> <span class="campo-trecho campo-trecho-peq"></span></td>
+            </tr>
+            <tr>
+                <td class="trecho-titulo"></td>
+                <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+            </tr>
+            <tr>
+                <td class="trecho-titulo"></td>
+                <td colspan="3"><span class="trecho-label">Atividade:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Chegada:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Partida:</span> <span class="campo-trecho"></span></td>
+            </tr>
+            <tr>
+                <td class="trecho-titulo"></td>
+                <td colspan="3"><span class="trecho-label">Motorista:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Placa:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Tipo Veículo:</span> <span class="campo-trecho"></span></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="linha-com-label" style="margin-top: 4mm;">
+        <div class="embarcador-label">Responsável Planejamento:</div>
+        <div class="planejamento-linha"></div>
+    </div>
+</div>
+
+<button class="no-print" onclick="window.print()">🖨️ IMPRIMIR</button>
+</body>
+</html>
+        `;
+    }
+
+    imprimirEtiqueta(pallet, codigoLista = null) {
+        const html = this.gerarEtiquetaHTML(pallet, codigoLista);
         const janela = window.open('', '_blank');
         janela.document.write(`
-    <html>
-        <head>
-            <title>Etiqueta Pallet - ${pallet.notaFiscal}</title>
-            <style>
-                @page {
-                    size: A4;
-                    margin: 0;
-                }
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                body {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    background: #f0f0f0;
-                    font-family: Arial, sans-serif;
-                    padding: 0;
-                    margin: 0;
-                }
-                .etiqueta-a4 {
-                    width: 210mm;
-                    height: 297mm;
-                    background: white;
-                    overflow: hidden;
-                    position: relative;
-                }
-                @media print {
-                    body {
-                        background: white;
-                        padding: 0;
-                        margin: 0;
-                        display: block;
-                        min-height: auto;
-                    }
-                    .etiqueta-a4 {
-                        width: 100%;
-                        height: auto;
-                        min-height: 297mm;
-                        page-break-after: avoid;
-                        page-break-inside: avoid;
-                        page-break-before: avoid;
-                        break-inside: avoid;
-                        break-after: avoid;
-                    }
-                    button {
-                        display: none;
-                    }
-                }
-                @media print and (size: A4) {
-                    .etiqueta-a4 {
-                        height: 100%;
-                        min-height: 297mm;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            ${html}
-            <button onclick="window.print()" style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 12px 24px;
-                background: #3498db;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                z-index: 1000;
-            ">🖨️ IMPRIMIR</button>
-        </body>
-    </html>
-    `);
+            <html>
+                <head>
+                    <title>Etiqueta Pallet - ${pallet.notaFiscal || 'DIVERSOS'}</title>
+                    <style>
+                        @page {
+                            size: A4;
+                            margin: 0;
+                        }
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            display: flex;
+                            justify-content: center;
+                            background: #f0f0f0;
+                            font-family: Arial, sans-serif;
+                        }
+                        @media print {
+                            body {
+                                background: white;
+                                margin: 0;
+                                padding: 0;
+                            }
+                            .no-print {
+                                display: none;
+                            }
+                        }
+                        .no-print {
+                            position: fixed;
+                            bottom: 20px;
+                            right: 20px;
+                            padding: 12px 24px;
+                            background: #3498db;
+                            color: white;
+                            border: none;
+                            border-radius: 5px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            z-index: 1000;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                    <button onclick="window.print()" class="no-print">🖨️ IMPRIMIR</button>
+                </body>
+            </html>
+        `);
         janela.document.close();
     }
 }

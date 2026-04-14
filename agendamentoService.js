@@ -63,16 +63,21 @@ class AgendamentoService {
   }
 
   processarAgendamento(a) {
+    if (a.destinatario) {
+      a.displayString = a.destinatario;
+      a.recebedor = a.destinatario;
+      return a;
+    }
+
     a.uf = (a.uf || '').toUpperCase().trim();
     a.hub = (a.hub || '').toUpperCase().trim();
     a.recebedor = (a.recebedor || '').toUpperCase().trim();
     a.tipo = (a.tipo || '').toUpperCase().trim();
     a.subrota = a.subrota || '';
-
     a.id = a.id || `${a.uf}-${a.hub}-${a.recebedor}${a.tipo ? '-' + a.tipo : ''}`.replace(/\s/g, '_');
     a.displayString = `${a.uf}/${a.hub}/${a.recebedor}${a.tipo ? '/' + a.tipo : ''}`;
 
-    this.agendamentos.set(a.id, a);
+    return a;
   }
 
   async create(uf, hub, recebedor, tipo = '', subrota = '') {
@@ -124,48 +129,36 @@ class AgendamentoService {
       const linha = linhas[i].trim();
       if (!linha) continue;
 
-      if (i === 0 && linha.toLowerCase().includes('destinatario')) continue;
+      if (i === 0 && (linha.toLowerCase().includes('destinatario') || linha.toLowerCase().includes('cnpj'))) {
+        continue;
+      }
 
-      const partes = linha.split(',').map(item => item.trim());
-      if (partes.length >= 2) {
-        const destinatario = partes[0].toUpperCase();
-        const cnpj = partes[1].replace(/[^\d]/g, '');
+      const ultimaVirgula = linha.lastIndexOf(',');
+      if (ultimaVirgula === -1) continue;
 
-        const uf = this.extrairUfDoDestinatario(destinatario);
-        const hub = this.extrairHubDoDestinatario(destinatario);
+      const destinatario = linha.substring(0, ultimaVirgula).trim();
+      let cnpj = linha.substring(ultimaVirgula + 1).trim();
+      cnpj = cnpj.replace(/[^\d]/g, '');
 
-        const ufFinal = uf || 'ND';
-        const hubFinal = hub || 'GERAL';
-        const tipo = 'PADRAO';
-        const subrota = cnpj;
+      if (!destinatario) continue;
 
-        let id = `${ufFinal}-${hubFinal}-${destinatario}`;
-        if (tipo) {
-          id += `-${tipo}`;
-        }
-        id = id.replace(/\s/g, '_');
+      const id = cnpj || Date.now().toString();
 
-        const agendamento = {
-          id,
-          uf: ufFinal,
-          hub: hubFinal,
-          recebedor: destinatario,
-          tipo: tipo,
-          subrota: subrota,
-          cnpj: cnpj,
-          displayString: `${ufFinal}/${hubFinal}/${destinatario}${tipo ? '/' + tipo : ''}`,
-          criadoEm: new Date().toISOString()
-        };
+      const agendamento = {
+        id: id,
+        destinatario: destinatario,
+        cnpj: cnpj,
+        criadoEm: new Date().toISOString()
+      };
 
-        novosAgendamentos.push(agendamento);
-        const docRef = window.db.collection('agendamentos').doc(id);
-        batch.set(docRef, agendamento, { merge: true });
-        operacoes++;
+      novosAgendamentos.push(agendamento);
+      const docRef = window.db.collection('agendamentos').doc(id);
+      batch.set(docRef, agendamento, { merge: true });
+      operacoes++;
 
-        if (operacoes === MAX_BATCH_SIZE) {
-          await batch.commit();
-          operacoes = 0;
-        }
+      if (operacoes === MAX_BATCH_SIZE) {
+        await batch.commit();
+        operacoes = 0;
       }
     }
 
@@ -263,9 +256,10 @@ class AgendamentoService {
     let lista = Array.from(this.agendamentos.values());
 
     if (busca) {
-      lista = lista.filter(a =>
-        a.displayString.toLowerCase().includes(busca.toLowerCase())
-      );
+      lista = lista.filter(a => {
+        const textoBusca = (a.destinatario || a.displayString || '').toLowerCase();
+        return textoBusca.includes(busca.toLowerCase());
+      });
     }
 
     lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));

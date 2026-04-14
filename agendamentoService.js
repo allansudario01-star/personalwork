@@ -118,22 +118,28 @@ class AgendamentoService {
     const batch = window.db.batch();
     let operacoes = 0;
     const MAX_BATCH_SIZE = 500;
-
     const novosAgendamentos = [];
 
     for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i].trim();
-      if (!linha || linha.startsWith('UF') || linha.startsWith('uf')) continue;
+      if (!linha) continue;
+
+      if (i === 0 && linha.toLowerCase().includes('destinatario')) continue;
 
       const partes = linha.split(',').map(item => item.trim());
-      if (partes.length >= 3) {
-        const uf = partes[0].toUpperCase();
-        const hub = partes[1].toUpperCase();
-        const recebedor = partes[2].toUpperCase();
-        const tipo = partes.length >= 4 && partes[3] ? partes[3].toUpperCase().trim() : '';
-        const subrota = partes.length >= 5 && partes[4] ? partes[4].trim() : '';
+      if (partes.length >= 2) {
+        const destinatario = partes[0].toUpperCase();
+        const cnpj = partes[1].replace(/[^\d]/g, '');
 
-        let id = `${uf}-${hub}-${recebedor}`;
+        const uf = this.extrairUfDoDestinatario(destinatario);
+        const hub = this.extrairHubDoDestinatario(destinatario);
+
+        const ufFinal = uf || 'ND';
+        const hubFinal = hub || 'GERAL';
+        const tipo = 'PADRAO';
+        const subrota = cnpj;
+
+        let id = `${ufFinal}-${hubFinal}-${destinatario}`;
         if (tipo) {
           id += `-${tipo}`;
         }
@@ -141,12 +147,13 @@ class AgendamentoService {
 
         const agendamento = {
           id,
-          uf,
-          hub,
-          recebedor,
+          uf: ufFinal,
+          hub: hubFinal,
+          recebedor: destinatario,
           tipo: tipo,
           subrota: subrota,
-          displayString: `${uf}/${hub}/${recebedor}${tipo ? '/' + tipo : ''}`,
+          cnpj: cnpj,
+          displayString: `${ufFinal}/${hubFinal}/${destinatario}${tipo ? '/' + tipo : ''}`,
           criadoEm: new Date().toISOString()
         };
 
@@ -155,17 +162,47 @@ class AgendamentoService {
         batch.set(docRef, agendamento, { merge: true });
         operacoes++;
 
-        if (operacoes === MAX_BATCH_SIZE || i === linhas.length - 1) {
+        if (operacoes === MAX_BATCH_SIZE) {
           await batch.commit();
           operacoes = 0;
         }
       }
     }
 
+    if (operacoes > 0) {
+      await batch.commit();
+    }
+
     novosAgendamentos.forEach(a => this.agendamentos.set(a.id, a));
     this.saveToStorage();
 
     return novosAgendamentos;
+  }
+
+  extrairUfDoDestinatario(destinatario) {
+    const ufMap = {
+      'SAO PAULO': 'SP',
+      'RIO DE JANEIRO': 'RJ',
+      'MINAS GERAIS': 'MG',
+      'BAHIA': 'BA',
+      'PARANA': 'PR',
+      'RIO GRANDE DO SUL': 'RS',
+      'SANTA CATARINA': 'SC',
+    };
+
+    for (const [nome, uf] of Object.entries(ufMap)) {
+      if (destinatario.includes(nome)) {
+        return uf;
+      }
+    }
+
+    const ufMatch = destinatario.match(/\b(SP|RJ|MG|RS|SC|PR|BA|DF|GO|ES|PE|CE|RN|PB|MA|PA|AM|AC|RO|RR|TO|MT|MS|AL|SE|PI|AP)\b/);
+    return ufMatch ? ufMatch[1] : '';
+  }
+
+  extrairHubDoDestinatario(destinatario) {
+    const primeiraPalavra = destinatario.split(/\s+/)[0];
+    return primeiraPalavra.substring(0, 4).replace(/[^\w]/g, '');
   }
 
   async limparTodos() {

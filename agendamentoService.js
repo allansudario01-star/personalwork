@@ -66,6 +66,7 @@ class AgendamentoService {
     if (a.destinatario) {
       a.displayString = a.destinatario;
       a.recebedor = a.destinatario;
+      this.agendamentos.set(a.id, a);
       return a;
     }
 
@@ -74,10 +75,11 @@ class AgendamentoService {
     a.recebedor = (a.recebedor || '').toUpperCase().trim();
     a.tipo = (a.tipo || '').toUpperCase().trim();
     a.subrota = a.subrota || '';
+
     a.id = a.id || `${a.uf}-${a.hub}-${a.recebedor}${a.tipo ? '-' + a.tipo : ''}`.replace(/\s/g, '_');
     a.displayString = `${a.uf}/${a.hub}/${a.recebedor}${a.tipo ? '/' + a.tipo : ''}`;
 
-    return a;
+    this.agendamentos.set(a.id, a);
   }
 
   async create(uf, hub, recebedor, tipo = '', subrota = '') {
@@ -148,6 +150,8 @@ class AgendamentoService {
         id: id,
         destinatario: destinatario,
         cnpj: cnpj,
+        recebedor: destinatario,
+        displayString: destinatario,
         criadoEm: new Date().toISOString()
       };
 
@@ -170,32 +174,6 @@ class AgendamentoService {
     this.saveToStorage();
 
     return novosAgendamentos;
-  }
-
-  extrairUfDoDestinatario(destinatario) {
-    const ufMap = {
-      'SAO PAULO': 'SP',
-      'RIO DE JANEIRO': 'RJ',
-      'MINAS GERAIS': 'MG',
-      'BAHIA': 'BA',
-      'PARANA': 'PR',
-      'RIO GRANDE DO SUL': 'RS',
-      'SANTA CATARINA': 'SC',
-    };
-
-    for (const [nome, uf] of Object.entries(ufMap)) {
-      if (destinatario.includes(nome)) {
-        return uf;
-      }
-    }
-
-    const ufMatch = destinatario.match(/\b(SP|RJ|MG|RS|SC|PR|BA|DF|GO|ES|PE|CE|RN|PB|MA|PA|AM|AC|RO|RR|TO|MT|MS|AL|SE|PI|AP)\b/);
-    return ufMatch ? ufMatch[1] : '';
-  }
-
-  extrairHubDoDestinatario(destinatario) {
-    const primeiraPalavra = destinatario.split(/\s+/)[0];
-    return primeiraPalavra.substring(0, 4).replace(/[^\w]/g, '');
   }
 
   async limparTodos() {

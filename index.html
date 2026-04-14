@@ -22,7 +22,7 @@
         </div>
         <div class="tab-bar">
             <button class="tab-btn active" data-tab="pallets">PALLETS</button>
-            <button class="tab-btn" data-tab="agendamentos">AGENDAMENTOS</button>
+            <button class="tab-btn" data-tab="destinatarios">DESTINATÁRIOS</button>
             <button class="tab-btn" data-tab="finalizados">FINALIZADOS</button>
         </div>
     </header>
@@ -38,12 +38,12 @@
             <div id="pallets-list"></div>
         </section>
 
-        <section id="agendamentos-tab" class="tab-content">
-            <h2>Agendamentos</h2>
+        <section id="destinatarios-tab" class="tab-content">
+            <h2>Destinatários</h2>
             <div class="filters">
-                <input type="text" id="search-agendamentos" placeholder="🔍 Pesquisar agendamentos...">
+                <input type="text" id="search-destinatarios" placeholder="🔍 Pesquisar destinatários...">
             </div>
-            <div id="agendamentos-list"></div>
+            <div id="destinatarios-list"></div>
         </section>
 
         <section id="finalizados-tab" class="tab-content">
@@ -68,16 +68,11 @@
                     </select>
                 </div>
 
-                <div class="scan-options">
-                    <button type="button" id="scan-btn-modal" class="btn-secondary" style="margin: 0;">📷 ESCANEAR
-                        SELO</button>
-                    <button type="button" id="import-img-btn" class="btn-secondary" style="margin: 0;">📁 IMPORTAR
-                        FOTO</button>
-                </div>
-
                 <div id="volumetria-campos">
                     <input type="text" id="nf" placeholder="Número Fiscal" autocomplete="off">
-                    <input type="text" id="recebedor" placeholder="Recebedor" autocomplete="off">
+                    <input type="text" id="recebedor" placeholder="Destinatário" autocomplete="off"
+                        list="destinatarios-list-datalist">
+                    <datalist id="destinatarios-list-datalist"></datalist>
                     <input type="text" id="embarcador" placeholder="Embarcador" autocomplete="off">
                     <input type="text" id="estado" placeholder="UF" maxlength="2" autocomplete="off">
                     <input type="text" id="cidade" placeholder="Cidade" autocomplete="off">
@@ -146,23 +141,9 @@
         </div>
     </div>
 
-    <div id="camera-modal" class="modal hidden">
-        <div class="modal-content" style="padding: 20px;">
-            <h3>📷 Escanear Selo</h3>
-            <video id="camera-video" autoplay playsinline
-                style="width: 100%; border-radius: 12px; margin: 10px 0;"></video>
-            <canvas id="camera-canvas" style="display: none;"></canvas>
-            <div class="form-actions">
-                <button id="capture-photo" class="btn-primary">📸 TIRAR FOTO</button>
-                <button id="close-camera" class="btn-secondary">FECHAR</button>
-            </div>
-        </div>
-    </div>
-
     <script src="firebase-config.js"></script>
     <script src="palletService.js"></script>
     <script src="agendamentoService.js"></script>
-    <script src="ocr-service.js"></script>
     <script src="app.js"></script>
 </body>
 

@@ -287,7 +287,7 @@
     </div>
 
     <div id="login-screen" class="login-container">
-        <h2>🔐 Painel Administrativo v01</h2>
+        <h2>🔐 Painel Administrativo</h2>
         <form id="login-form">
             <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
             <input type="password" id="login-password" placeholder="Senha" required autocomplete="current-password">
@@ -298,7 +298,7 @@
 
     <div id="admin-panel" class="admin-panel hidden">
         <div class="admin-header">
-            <h1>📋 Gestão de Agendamentos</h1>
+            <h1>📋 Gestão de Destinatários</h1>
             <button class="logout-btn" id="logout-btn">Sair</button>
         </div>
 
@@ -307,34 +307,33 @@
         </div>
 
         <div class="import-area">
-            <h3>📥 Importar Agendamentos</h3>
-            <p>Selecione um arquivo CSV com os agendamentos</p>
+            <h3>📥 Importar Destinatários</h3>
+            <p>Selecione um arquivo CSV com os destinatários</p>
+            <p style="font-size: 12px; color: #7f8c8d;">Formato: Destinatario,CNPJ</p>
+            <p style="font-size: 12px; color: #7f8c8d;">Exemplo: EMPRESA X LTDA,12345678000199</p>
             <input type="file" id="import-csv" accept=".csv, .txt">
             <button id="import-btn" class="btn-primary" style="margin-top: 10px;">Importar</button>
         </div>
 
         <div class="filters">
-            <input type="text" id="search-agendamentos" placeholder="🔍 Pesquisar agendamentos...">
-            <button id="create-agendamento-btn" class="btn-primary">+ NOVO AGENDAMENTO</button>
+            <input type="text" id="search-agendamentos" placeholder="🔍 Pesquisar destinatários...">
+            <button id="create-agendamento-btn" class="btn-primary">+ NOVO DESTINATÁRIO</button>
             <button id="clear-all-btn" class="btn-danger">🗑️ LIMPAR TUDO</button>
             <button id="hard-reset-btn" class="btn-danger" style="background: #c0392b;">⚠️ RESET TOTAL (Firebase +
                 Local)</button>
         </div>
 
         <div id="agendamentos-list">
-            <div class="loading">📋 Carregando agendamentos...</div>
+            <div class="loading">📋 Carregando destinatários...</div>
         </div>
     </div>
 
     <div id="agendamento-modal" class="modal hidden">
         <div class="modal-content">
-            <h3 id="modal-title">Novo Agendamento</h3>
+            <h3 id="modal-title">Novo Destinatário</h3>
             <form id="agendamento-form-modal">
-                <input type="text" id="modal-uf" placeholder="UF (ex: SP)" maxlength="2" required>
-                <input type="text" id="modal-hub" placeholder="Hub (ex: SAO)" required>
-                <input type="text" id="modal-recebedor" placeholder="Recebedor" required>
-                <input type="text" id="modal-tipo" placeholder="Tipo" value="PADRÃO">
-                <textarea id="modal-subrota" placeholder="Subrota / Subregião" rows="3"></textarea>
+                <input type="text" id="modal-destinatario" placeholder="Destinatário" required>
+                <input type="text" id="modal-cnpj" placeholder="CNPJ (apenas números)" required>
                 <div class="modal-actions">
                     <button type="submit" class="save-btn">Salvar</button>
                     <button type="button" id="close-modal-btn" class="cancel-btn">Cancelar</button>
@@ -423,12 +422,9 @@
 
             document.getElementById('create-agendamento-btn').addEventListener('click', () => {
                 editingAgendamentoId = null;
-                document.getElementById('modal-title').textContent = 'Novo Agendamento';
-                document.getElementById('modal-uf').value = '';
-                document.getElementById('modal-hub').value = '';
-                document.getElementById('modal-recebedor').value = '';
-                document.getElementById('modal-tipo').value = 'PADRÃO';
-                document.getElementById('modal-subrota').value = '';
+                document.getElementById('modal-title').textContent = 'Novo Destinatário';
+                document.getElementById('modal-destinatario').value = '';
+                document.getElementById('modal-cnpj').value = '';
                 document.getElementById('agendamento-modal').classList.remove('hidden');
             });
 
@@ -439,11 +435,8 @@
             document.getElementById('agendamento-form-modal').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
-                const uf = document.getElementById('modal-uf').value;
-                const hub = document.getElementById('modal-hub').value;
-                const recebedor = document.getElementById('modal-recebedor').value;
-                const tipo = document.getElementById('modal-tipo').value;
-                const subrota = document.getElementById('modal-subrota').value;
+                const destinatario = document.getElementById('modal-destinatario').value;
+                const cnpj = document.getElementById('modal-cnpj').value.replace(/[^\d]/g, '');
 
                 if (!agendamentoService) {
                     alert('❌ Serviço não disponível.');
@@ -453,16 +446,27 @@
                 try {
                     if (editingAgendamentoId) {
                         await agendamentoService.delete(editingAgendamentoId);
-                        await agendamentoService.create(uf, hub, recebedor, tipo, subrota);
-                    } else {
-                        await agendamentoService.create(uf, hub, recebedor, tipo, subrota);
                     }
+
+                    const id = cnpj || Date.now().toString();
+                    const agendamento = {
+                        id: id,
+                        destinatario: destinatario.toUpperCase(),
+                        cnpj: cnpj,
+                        recebedor: destinatario.toUpperCase(),
+                        displayString: destinatario.toUpperCase(),
+                        criadoEm: new Date().toISOString()
+                    };
+
+                    await window.db.collection('agendamentos').doc(id).set(agendamento, { merge: true });
+                    agendamentoService.agendamentos.set(id, agendamento);
+                    agendamentoService.saveToStorage();
 
                     document.getElementById('agendamento-modal').classList.add('hidden');
                     renderizarAgendamentos();
                     atualizarStats();
                 } catch (error) {
-                    alert('❌ Erro ao salvar agendamento.');
+                    alert('❌ Erro ao salvar destinatário.');
                 }
             });
 
@@ -487,12 +491,12 @@
                         const conteudo = event.target.result;
                         const resultados = await agendamentoService.importarDoExcel(conteudo);
                         const tempo = ((Date.now() - startTime) / 1000).toFixed(2);
-                        alert(`✅ ${resultados.length} agendamentos importados com sucesso em ${tempo} segundos!`);
+                        alert(`✅ ${resultados.length} destinatários importados com sucesso em ${tempo} segundos!`);
                         renderizarAgendamentos();
                         atualizarStats();
                         fileInput.value = '';
                     } catch (error) {
-                        alert('❌ Erro ao importar. Verifique o formato do arquivo.\n\nFormato esperado:\nUF,Hub,Recebedor,Tipo,Subrota\nMG,BET,EMPRESA X,PADRÃO,ZONA SUL');
+                        alert('❌ Erro ao importar. Verifique o formato do arquivo.\n\nFormato esperado:\nDestinatario,CNPJ\nEMPRESA X LTDA,12345678000199');
                     }
                 };
                 reader.readAsText(file);
@@ -504,14 +508,14 @@
                     return;
                 }
 
-                if (confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os agendamentos. Tem certeza?')) {
+                if (confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os destinatários. Tem certeza?')) {
                     if (confirm('Última confirmação: TEM CERTEZA ABSOLUTA?')) {
                         try {
                             await agendamentoService.limparTodos();
                             renderizarAgendamentos();
                             atualizarStats();
                         } catch (error) {
-                            alert('❌ Erro ao limpar agendamentos.');
+                            alert('❌ Erro ao limpar destinatários.');
                         }
                     }
                 }
@@ -523,7 +527,7 @@
                     return;
                 }
 
-                if (confirm('⚠️⚠️⚠️ RESET TOTAL ⚠️⚠️⚠️\n\nIsso vai apagar TODOS os agendamentos do Firebase E DO LOCALSTORAGE.\n\nNão tem volta! Tem certeza?')) {
+                if (confirm('⚠️⚠️⚠️ RESET TOTAL ⚠️⚠️⚠️\n\nIsso vai apagar TODOS os destinatários do Firebase E DO LOCALSTORAGE.\n\nNão tem volta! Tem certeza?')) {
                     if (confirm('ÚLTIMA CONFIRMAÇÃO: DIGITE "RESET" para confirmar')) {
                         const confirmacao = prompt('Digite "RESET" para confirmar a exclusão TOTAL:');
                         if (confirmacao === 'RESET') {
@@ -565,13 +569,13 @@
             let agendamentos = agendamentoService.listar();
 
             if (busca) {
-                agendamentos = agendamentos.filter(a => a.displayString.toLowerCase().includes(busca) || (a.subrota && a.subrota.toLowerCase().includes(busca)));
+                agendamentos = agendamentos.filter(a => (a.destinatario || a.displayString || '').toLowerCase().includes(busca));
             }
 
             const listaDiv = document.getElementById('agendamentos-list');
 
             if (agendamentos.length === 0) {
-                listaDiv.innerHTML = '<div class="loading">📋 Nenhum agendamento cadastrado</div>';
+                listaDiv.innerHTML = '<div class="loading">📋 Nenhum destinatário cadastrado</div>';
                 return;
             }
 
@@ -580,10 +584,10 @@
                 html += `
                         <div class="agendamento-card">
                             <div>
-                                <strong>${a.displayString}</strong>
-                                ${a.subrota ? `<div style="font-size: 12px; color: #e67e22; margin-top: 4px;">📍 ${a.subrota}</div>` : ''}
+                                <strong>${a.destinatario || a.displayString}</strong>
+                                ${a.cnpj ? `<div style="font-size: 12px; color: #7f8c8d; margin-top: 4px;">CNPJ: ${a.cnpj}</div>` : ''}
                                 <div style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">
-                                    Tipo: ${a.tipo} | Criado: ${new Date(a.criadoEm).toLocaleString()}
+                                    Criado: ${new Date(a.criadoEm).toLocaleString()}
                                 </div>
                             </div>
                             <div class="agendamento-actions">
@@ -601,7 +605,7 @@
             if (!agendamentoService) return;
             const agendamentos = agendamentoService.listar();
             const statsDiv = document.getElementById('stats');
-            statsDiv.innerHTML = `📊 Total de agendamentos: <strong>${agendamentos.length}</strong>`;
+            statsDiv.innerHTML = `📊 Total de destinatários: <strong>${agendamentos.length}</strong>`;
         }
 
         window.editarAgendamento = function (id) {
@@ -615,12 +619,9 @@
 
             if (agendamento) {
                 editingAgendamentoId = id;
-                document.getElementById('modal-title').textContent = 'Editar Agendamento';
-                document.getElementById('modal-uf').value = agendamento.uf;
-                document.getElementById('modal-hub').value = agendamento.hub;
-                document.getElementById('modal-recebedor').value = agendamento.recebedor;
-                document.getElementById('modal-tipo').value = agendamento.tipo;
-                document.getElementById('modal-subrota').value = agendamento.subrota || '';
+                document.getElementById('modal-title').textContent = 'Editar Destinatário';
+                document.getElementById('modal-destinatario').value = agendamento.destinatario || '';
+                document.getElementById('modal-cnpj').value = agendamento.cnpj || '';
                 document.getElementById('agendamento-modal').classList.remove('hidden');
             }
         };
@@ -631,13 +632,13 @@
                 return;
             }
 
-            if (confirm('🗑️ Remover este agendamento?')) {
+            if (confirm('🗑️ Remover este destinatário?')) {
                 try {
                     await agendamentoService.delete(id);
                     renderizarAgendamentos();
                     atualizarStats();
                 } catch (error) {
-                    alert('❌ Erro ao deletar agendamento.');
+                    alert('❌ Erro ao deletar destinatário.');
                 }
             }
         };

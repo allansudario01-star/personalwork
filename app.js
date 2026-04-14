@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
   configurarTema();
 
   renderizarPallets();
-  renderizarAgendamentos();
+  renderizarDestinatarios();
   renderizarFinalizados();
 
   configurarMonitorConexao();
@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tabName === 'finalizados') {
           renderizarFinalizados();
         }
-        if (tabName === 'agendamentos') {
-          renderizarAgendamentos();
+        if (tabName === 'destinatarios') {
+          renderizarDestinatarios();
         }
       });
     });
@@ -149,37 +149,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  function atualizarDatalistDestinatarios() {
+    const destinatarios = window.agendamentoService.listar();
+    const datalist = document.getElementById('destinatarios-list-datalist');
+    if (datalist) {
+      datalist.innerHTML = '';
+      destinatarios.forEach(d => {
+        const option = document.createElement('option');
+        option.value = d.destinatario;
+        datalist.appendChild(option);
+      });
+    }
+  }
+
   function configurarBotoes() {
     document.getElementById('create-pallet-btn').addEventListener('click', () => {
       resetFormularioPallet();
+      atualizarDatalistDestinatarios();
       document.getElementById('pallet-modal').classList.remove('hidden');
     });
 
     document.getElementById('pallet-tipo').addEventListener('change', toggleCamposPorTipo);
-
-    document.getElementById('scan-btn-modal').addEventListener('click', () => {
-      window.currentFormType = 'pallet';
-      abrirCamera();
-    });
-
-    document.getElementById('import-img-btn').addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const dados = await window.OCRService.extrairDadosSelo(await lerArquivoComoDataURL(file));
-          if (dados) {
-            preencherDadosOCR(dados);
-            alert('✅ Dados do selo carregados com sucesso!');
-          } else {
-            alert('⚠️ Não foi possível ler o selo. Preencha manualmente.');
-          }
-        }
-      };
-      input.click();
-    });
 
     document.getElementById('close-modal').addEventListener('click', () => {
       document.getElementById('pallet-modal').classList.add('hidden');
@@ -225,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('search-nf').addEventListener('input', debounce(renderizarPallets, 300));
-    document.getElementById('search-agendamentos').addEventListener('input', debounce(renderizarAgendamentos, 300));
+    document.getElementById('search-destinatarios').addEventListener('input', debounce(renderizarDestinatarios, 300));
     document.getElementById('search-finalizados')?.addEventListener('input', debounce(renderizarFinalizados, 300));
 
     document.getElementById('clear-history')?.addEventListener('click', () => {
@@ -290,86 +280,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('cancelar-codigo-modal').addEventListener('click', () => {
       document.getElementById('codigo-lista-modal').classList.add('hidden');
     });
-
-    document.getElementById('close-camera').addEventListener('click', () => {
-      fecharCamera();
-    });
-
-    document.getElementById('capture-photo').addEventListener('click', async () => {
-      await capturarEProcessarFoto();
-    });
-  }
-
-  function lerArquivoComoDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function preencherDadosOCR(dados) {
-    const tipo = document.getElementById('pallet-tipo').value;
-
-    if (tipo === 'VOLUMETRIA_ALTA') {
-      if (dados.notaFiscal) document.getElementById('nf').value = dados.notaFiscal;
-      if (dados.recebedor) document.getElementById('recebedor').value = dados.recebedor;
-      if (dados.hub) document.getElementById('regiao').value = dados.hub;
-      if (dados.estado) document.getElementById('estado').value = dados.estado;
-      if (dados.cidade) document.getElementById('cidade').value = dados.cidade;
-    }
-  }
-
-  async function abrirCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } }
-      });
-      const video = document.getElementById('camera-video');
-      video.srcObject = stream;
-      document.getElementById('camera-modal').classList.remove('hidden');
-    } catch (error) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const video = document.getElementById('camera-video');
-        video.srcObject = stream;
-        document.getElementById('camera-modal').classList.remove('hidden');
-      } catch (err) {
-        alert('❌ Erro ao abrir câmera: ' + err.message);
-      }
-    }
-  }
-
-  function fecharCamera() {
-    const video = document.getElementById('camera-video');
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach(track => track.stop());
-    }
-    document.getElementById('camera-modal').classList.add('hidden');
-  }
-
-  async function capturarEProcessarFoto() {
-    const video = document.getElementById('camera-video');
-    const canvas = document.getElementById('camera-canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = canvas.toDataURL('image/jpeg');
-
-    if (window.OCRService) {
-      const dadosExtraidos = await window.OCRService.extrairDadosSelo(imageData);
-
-      if (dadosExtraidos) {
-        preencherDadosOCR(dadosExtraidos);
-        alert('✅ Dados do selo carregados com sucesso!');
-      } else {
-        alert('⚠️ Não foi possível ler o selo. Preencha manualmente.');
-      }
-    }
-
-    fecharCamera();
   }
 
   async function finalizarPalletComConfirmacao(id, bipado) {
@@ -416,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
     infoDiv.innerHTML = `
       <div>
         <strong>Número Fiscal:</strong> ${p.notaFiscal || 'DIVERSOS'}<br>
-        <strong>Recebedor:</strong> ${p.recebedor || 'DIVERSOS'}<br>
+        <strong>Destinatário:</strong> ${p.recebedor || 'DIVERSOS'}<br>
         <strong>Embarcador:</strong> ${p.embarcador || 'DIVERSOS'}<br>
         <strong>UF:</strong> ${p.estado}<br>
         <strong>Cidade:</strong> ${p.cidade || 'DIVERSOS'}<br>
@@ -529,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
 
           <div class="info-grid">
-            <div class="info-item"><small>Recebedor</small><strong>${p.recebedor || 'DIVERSOS'}</strong></div>
+            <div class="info-item"><small>Destinatário</small><strong>${p.recebedor || 'DIVERSOS'}</strong></div>
             <div class="info-item"><small>Embarcador</small><strong>${p.embarcador || 'DIVERSOS'}</strong></div>
             <div class="info-item"><small>UF</small><strong>${p.estado || ''}</strong></div>
             <div class="info-item"><small>Cidade</small><strong>${p.cidade || 'N/A'}</strong></div>
@@ -563,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <span class="nf-tag" style="font-size: 16px;">Anexado - NF ${anexo.notaFiscal}</span>
               </div>
               <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div class="info-item"><small>Recebedor</small><strong>${anexo.recebedor}</strong></div>
+                <div class="info-item"><small>Destinatário</small><strong>${anexo.recebedor}</strong></div>
                 <div class="info-item"><small>Embarcador</small><strong>${anexo.embarcador || 'DIVERSOS'}</strong></div>
                 <div class="info-item"><small>Sub-região</small><strong>${subrotaAnexo}</strong></div>
                 <div class="info-item"><small>Volumes</small><strong>${volumesAnexo}</strong></div>
@@ -584,29 +494,29 @@ document.addEventListener('DOMContentLoaded', function () {
     lista.innerHTML = html;
   }
 
-  function renderizarAgendamentos() {
-    const busca = document.getElementById('search-agendamentos').value.toLowerCase();
-    let agendamentos = window.agendamentoService.listar();
+  function renderizarDestinatarios() {
+    const busca = document.getElementById('search-destinatarios').value.toLowerCase();
+    let destinatarios = window.agendamentoService.listar();
 
     if (busca) {
-      agendamentos = agendamentos.filter(a => a.displayString.toLowerCase().includes(busca));
+      destinatarios = destinatarios.filter(d => (d.destinatario || '').toLowerCase().includes(busca));
     }
 
-    const lista = document.getElementById('agendamentos-list');
+    const lista = document.getElementById('destinatarios-list');
 
-    if (agendamentos.length === 0) {
-      lista.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">📋 Nenhum agendamento encontrado</div>';
+    if (destinatarios.length === 0) {
+      lista.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">📋 Nenhum destinatário encontrado</div>';
       return;
     }
 
     let html = '';
-    agendamentos.forEach(a => {
+    destinatarios.forEach(d => {
       html += `
-        <div class="agendamento-item">
-          <div class="agendamento-info">
-            ${a.uf}/${a.hub}/${a.recebedor}/${a.tipo}
-            ${a.subrota ? `<div style="font-size: 12px; color: var(--warning); margin-top: 4px;">📍 ${a.hub} ${a.subrota}</div>` : ''}
-            <small>${new Date(a.criadoEm).toLocaleDateString()}</small>
+        <div class="destinatario-item">
+          <div class="destinatario-info">
+            <strong>${d.destinatario}</strong>
+            ${d.cnpj ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">CNPJ: ${d.cnpj}</div>` : ''}
+            <small>${new Date(d.criadoEm).toLocaleDateString()}</small>
           </div>
         </div>
       `;
@@ -650,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
 
           <div class="finalizado-info">
-            <div><small>Recebedor</small><br>${p.recebedor || 'DIVERSOS'}</div>
+            <div><small>Destinatário</small><br>${p.recebedor || 'DIVERSOS'}</div>
             <div><small>Embarcador</small><br>${p.embarcador || 'DIVERSOS'}</div>
             <div><small>UF</small><br>${p.estado}</div>
             <div><small>Cidade</small><br>${p.cidade || 'N/A'}</div>

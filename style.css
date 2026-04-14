@@ -690,4 +690,31 @@ h2 {
   .modal-content {
     padding-bottom: max(32px, env(safe-area-inset-bottom));
   }
+
+  .destinatario-item {
+    background: var(--bg-card);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    touch-action: manipulation;
+  }
+
+  .destinatario-info {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .destinatario-info small {
+    color: var(--text-secondary);
+    font-size: 12px;
+    display: block;
+    margin-top: 6px;
+  }
 }

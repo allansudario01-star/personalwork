@@ -290,7 +290,7 @@ class PalletService {
 <style>
     @page {
         size: A4;
-        margin: 8mm 10mm;
+        margin: 6mm 10mm;
     }
     * {
         margin: 0;
@@ -300,31 +300,31 @@ class PalletService {
     body {
         font-family: 'Helvetica', 'Arial', sans-serif;
         background: white;
-        font-size: 11px;
+        font-size: 10px;
     }
     .page {
         width: 100%;
     }
     .section-title {
         background: #e0e0e0;
-        padding: 2mm 4mm;
+        padding: 1.5mm 4mm;
         font-weight: bold;
         font-size: 11px;
         border: 1px solid #aaa;
-        margin-top: 3mm;
+        margin-top: 1mm;
     }
     .section-content {
         border: 1px solid #aaa;
         border-top: none;
-        padding: 3mm 4mm;
+        padding: 2mm 3mm;
     }
     .header-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 3mm;
+        margin-bottom: 4mm;
     }
     .campo-container {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
     }
     .campo-linha {
@@ -335,25 +335,25 @@ class PalletService {
     }
     .info-row {
         display: flex;
-        gap: 4mm;
-        margin-bottom: 3mm;
+        gap: 5mm;
+        margin-bottom: 4mm;
         justify-content: space-between;
     }
     .info-block {
         flex: 1;
     }
     .info-label {
-        font-size: 9px;
+        font-size: 8px;
         font-weight: bold;
         margin-bottom: 1mm;
         color: #333;
     }
     .info-value {
-        font-size: 14px;
+        font-size: 18px;
         font-weight: bold;
     }
     .cidade-value {
-        font-size: 11px;
+        font-size: 13px;
     }
     .endereco-value {
         font-size: 10px;
@@ -363,7 +363,7 @@ class PalletService {
     }
     .two-columns {
         display: flex;
-        gap: 4mm;
+        gap: 5mm;
         margin-bottom: 3mm;
     }
     .left-col {
@@ -376,8 +376,8 @@ class PalletService {
         align-items: flex-start;
     }
     .qrcode-box {
-        width: 32mm;
-        height: 32mm;
+        width: 36mm;
+        height: 36mm;
         border: 1px solid #aaa;
         display: flex;
         align-items: center;
@@ -392,10 +392,10 @@ class PalletService {
     .embarcador-item {
         display: flex;
         align-items: baseline;
-        margin-bottom: 2.5mm;
+        margin-bottom: 3mm;
     }
     .embarcador-label {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
         width: 22mm;
     }
@@ -406,7 +406,7 @@ class PalletService {
     }
     .volumes-row {
         display: flex;
-        gap: 6mm;
+        gap: 10mm;
         margin-bottom: 3mm;
     }
     .volume-card, .pallet-card {
@@ -417,12 +417,12 @@ class PalletService {
         text-align: center;
     }
     .volume-label, .pallet-label {
-        font-size: 9px;
+        font-size: 8px;
         font-weight: bold;
         margin-bottom: 1mm;
     }
     .volume-number, .pallet-number {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: bold;
     }
     .checkbox-row {
@@ -445,16 +445,19 @@ class PalletService {
         background: white;
     }
     .checkbox-label {
-        font-size: 10px;
+        font-size: 9px;
     }
     .section-label {
         font-weight: bold;
-        font-size: 10px;
+        font-size: 9px;
+    }
+    .full-width {
+        width: 100%;
     }
     .resp-linha, .planejamento-linha {
         border-bottom: 1px solid #000;
         flex: 1;
-        margin-left: 4mm;
+        margin-left: 5mm;
         height: 5mm;
     }
     .destinatario-row {
@@ -471,13 +474,13 @@ class PalletService {
     .linha-com-label {
         display: flex;
         align-items: baseline;
-        margin-top: 2mm;
+        margin-top: 3mm;
     }
     .servico-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2mm;
+        margin-bottom: 2.5mm;
         flex-wrap: wrap;
     }
     .servico-check-group {
@@ -487,7 +490,7 @@ class PalletService {
         flex: 2;
     }
     .servico-data {
-        font-size: 10px;
+        font-size: 9px;
         display: flex;
         align-items: center;
         gap: 2mm;
@@ -508,17 +511,17 @@ class PalletService {
     }
     .trecho-titulo {
         font-weight: bold;
-        width: 10%;
+        width: 12%;
         font-size: 9px;
     }
     .campo-trecho {
         border-bottom: 1px solid #000;
-        min-width: 20mm;
+        min-width: 22mm;
         height: 4mm;
         display: inline-block;
     }
     .campo-trecho-peq {
-        min-width: 12mm;
+        min-width: 14mm;
     }
     .trecho-label {
         font-size: 9px;
@@ -559,7 +562,7 @@ class PalletService {
         </div>
         <div class="info-row">
             <div class="info-block"><div class="info-label">REGIÃO</div><div class="info-value">${pallet.regiao || ''}</div></div>
-            <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:14px;">${subrotaDisplay}</div></div>
+            <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:16px;">${subrotaDisplay}</div></div>
             <div class="info-block"><div class="info-label">CIDADE</div><div class="info-value cidade-value">${pallet.cidade || ''}</div></div>
             <div class="info-block"><div class="info-label">UF</div><div class="info-value">${pallet.estado || ''}</div></div>
         </div>
@@ -591,7 +594,7 @@ class PalletService {
                 </div>
             </div>
             <div class="right-col">
-                ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:32mm;"></div>'}
+                ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:36mm;"></div>'}
             </div>
         </div>
         <div class="checkbox-row">
@@ -635,7 +638,7 @@ class PalletService {
         </div>
     </div>
     <div class="section-title">TRANSFERÊNCIA</div>
-    <div class="section-content" style="padding: 2mm 3mm;">
+    <div class="section-content" style="padding: 1.5mm 2mm;">
         <table class="trechos-table">
             ${[1, 2, 3].map(i => `
                 <tr>
@@ -646,7 +649,7 @@ class PalletService {
                 </tr>
                 <tr>
                     <td class="trecho-titulo"></td>
-                    <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 28mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 28mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+                    <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
                 </tr>
                 <tr>
                     <td class="trecho-titulo"></td>
@@ -661,7 +664,7 @@ class PalletService {
         </table>
     </div>
     <div class="section-title">LAST MILE</div>
-    <div class="section-content" style="padding: 2mm 3mm;">
+    <div class="section-content" style="padding: 1.5mm 2mm;">
         <table class="trechos-table">
             <tr>
                 <td class="trecho-titulo">Trecho 04</td>
@@ -671,7 +674,7 @@ class PalletService {
             </tr>
             <tr>
                 <td class="trecho-titulo"></td>
-                <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 28mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 28mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+                <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
             </tr>
             <tr>
                 <td class="trecho-titulo"></td>
@@ -683,7 +686,7 @@ class PalletService {
             </tr>
         </table>
     </div>
-    <div class="linha-com-label" style="margin-top: 3mm;">
+    <div class="linha-com-label" style="margin-top: 2mm;">
         <div class="embarcador-label">Responsável Planejamento:</div>
         <div class="planejamento-linha"></div>
     </div>

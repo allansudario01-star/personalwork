@@ -550,16 +550,13 @@ class PalletService {
 </head>
 <body>
 <div class="page">
-    <div class="section-title">RESPONSÁVEL POR SEPARAR</div>
+    <div class="section-title">SEPARAÇÃO</div>
     <div class="section-content">
-        <div class="linha-com-label">
+        <div class="linha-com-label" style="margin-top: 0;">
             <div class="embarcador-label">Responsável por separar:</div>
             <div class="resp-linha"></div>
         </div>
-    </div>
-    <div class="section-title">SEPARAÇÃO</div>
-    <div class="section-content">
-        <div class="header-row">
+        <div class="header-row" style="margin-top: 4mm;">
             <div class="campo-container">Nº OS do Container: <span class="campo-linha"></span></div>
             <div class="campo-container">Data/Hora: ${dataHora}</div>
         </div>

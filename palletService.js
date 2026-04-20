@@ -6,11 +6,9 @@ class PalletService {
         this.loadFromStorage();
         this.setupRealtimeListener();
     }
-
     setAgendamentoService(service) {
         this.agendamentoService = service;
     }
-
     setupRealtimeListener() {
         if (window.db) {
             window.db.collection('agendamentos').onSnapshot(() => {
@@ -20,7 +18,6 @@ class PalletService {
             });
         }
     }
-
     loadFromStorage() {
         const saved = localStorage.getItem('pallets');
         if (saved) {
@@ -29,7 +26,6 @@ class PalletService {
                 lista.forEach(p => this.pallets.set(p.id, p));
             } catch (e) { }
         }
-
         const finalizados = localStorage.getItem('palletsFinalizados');
         if (finalizados) {
             try {
@@ -38,17 +34,14 @@ class PalletService {
             } catch (e) { }
         }
     }
-
     saveToStorage() {
         const lista = Array.from(this.pallets.values());
         localStorage.setItem('pallets', JSON.stringify(lista));
     }
-
     saveFinalizadosToStorage() {
         const lista = Array.from(this.finalizados.values());
         localStorage.setItem('palletsFinalizados', JSON.stringify(lista));
     }
-
     async create(data, tipo) {
         const id = Date.now().toString();
         const basePallet = {
@@ -61,9 +54,7 @@ class PalletService {
             palletsVinculados: [],
             palletPrincipalId: null
         };
-
         let novo;
-
         if (tipo === 'VOLUMETRIA_ALTA') {
             novo = {
                 ...basePallet,
@@ -73,6 +64,7 @@ class PalletService {
                 hub: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 estado: data.estado.toUpperCase().trim(),
                 cidade: data.cidade.toUpperCase().trim(),
+                endereco: data.endereco ? data.endereco.toUpperCase().trim() : '',
                 regiao: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 subregiao: data.subregiao ? data.subregiao.toString().trim() : '',
                 maxVolumes: parseInt(data.maxVolumes),
@@ -88,6 +80,7 @@ class PalletService {
                 hub: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 estado: data.estado.toUpperCase().trim(),
                 cidade: 'DIVERSOS',
+                endereco: 'DIVERSOS',
                 regiao: data.regiao ? data.regiao.toUpperCase().trim() : '',
                 subregiao: data.subregiao ? data.subregiao.toString().trim() : '',
                 maxVolumes: null,
@@ -96,23 +89,18 @@ class PalletService {
                 volumesTexto: ''
             };
         }
-
         this.pallets.set(id, novo);
         this.saveToStorage();
-
         try {
             await window.db.collection('pallets').doc(id).set(novo);
         } catch (e) { }
-
         return novo;
     }
-
     async anexarPallet(idPalletPrincipal) {
         const palletPrincipal = this.pallets.get(idPalletPrincipal);
         if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') {
             return null;
         }
-
         const novoId = Date.now().toString();
         const palletAnexado = {
             ...palletPrincipal,
@@ -124,39 +112,29 @@ class PalletService {
             volumesAtuais: 0,
             palletsVinculados: []
         };
-
         this.pallets.set(novoId, palletAnexado);
-
         if (!palletPrincipal.palletsVinculados) {
             palletPrincipal.palletsVinculados = [];
         }
         palletPrincipal.palletsVinculados.push(novoId);
         this.pallets.set(idPalletPrincipal, palletPrincipal);
-
         this.saveToStorage();
-
         try {
             await window.db.collection('pallets').doc(novoId).set(palletAnexado);
             await window.db.collection('pallets').doc(idPalletPrincipal).update({
                 palletsVinculados: palletPrincipal.palletsVinculados
             });
         } catch (e) { }
-
         return palletAnexado;
     }
-
     async updateVolumes(id, novosVolumes) {
         const pallet = this.pallets.get(id);
         if (!pallet || pallet.tipo === 'DIVERSOS') return;
         if (pallet.volumesDiversos) return;
-
         pallet.volumesAtuais = Math.min(novosVolumes, pallet.maxVolumes);
         if (pallet.volumesAtuais < 0) pallet.volumesAtuais = 0;
-
         pallet.ultimaAtualizacao = new Date().toISOString();
-
         this.saveToStorage();
-
         try {
             await window.db.collection('pallets').doc(id).update({
                 volumesAtuais: pallet.volumesAtuais,
@@ -164,11 +142,9 @@ class PalletService {
             });
         } catch (e) { }
     }
-
     async finalizar(id, bipado = false) {
         const pallet = this.pallets.get(id);
         if (!pallet) return;
-
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
             if (principal && principal.palletsVinculados) {
@@ -178,7 +154,6 @@ class PalletService {
                 this.saveToStorage();
             }
         }
-
         if (pallet.tipo === 'VOLUMETRIA_ALTA' && pallet.palletsVinculados && pallet.palletsVinculados.length > 0) {
             for (const anexoId of pallet.palletsVinculados) {
                 const anexo = this.pallets.get(anexoId);
@@ -191,27 +166,21 @@ class PalletService {
                 }
             }
         }
-
         pallet.finalizadoEm = new Date().toISOString();
         pallet.bipado = bipado;
         pallet.status = 'finalizado';
-
         this.finalizados.set(id, pallet);
         this.pallets.delete(id);
-
         this.saveToStorage();
         this.saveFinalizadosToStorage();
-
         try {
             await window.db.collection('pallets').doc(id).delete();
             await window.db.collection('palletsFinalizados').doc(id).set(pallet);
         } catch (e) { }
     }
-
     async excluir(id) {
         const pallet = this.pallets.get(id);
         if (!pallet) return;
-
         if (pallet.palletPrincipalId) {
             const principal = this.pallets.get(pallet.palletPrincipalId);
             if (principal && principal.palletsVinculados) {
@@ -220,28 +189,21 @@ class PalletService {
                 this.pallets.set(principal.id, principal);
             }
         }
-
         this.pallets.delete(id);
         this.saveToStorage();
-
         try {
             await window.db.collection('pallets').doc(id).delete();
         } catch (e) { }
     }
-
     listar(buscaNF = '') {
         let lista = Array.from(this.pallets.values());
-
         if (buscaNF) {
             lista = lista.filter(p => p.notaFiscal?.includes(buscaNF.toUpperCase()));
         }
-
         return lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
     }
-
     listarFinalizados(busca = '') {
         let lista = Array.from(this.finalizados.values());
-
         if (busca) {
             const buscaUpper = busca.toUpperCase();
             lista = lista.filter(p =>
@@ -252,17 +214,14 @@ class PalletService {
                 p.estado?.toUpperCase().includes(buscaUpper)
             );
         }
-
         return lista.sort((a, b) =>
             new Date(b.finalizadoEm) - new Date(a.finalizadoEm)
         );
     }
-
     limparHistorico() {
         this.finalizados.clear();
         this.saveFinalizadosToStorage();
     }
-
     obterTotalPalletsGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return null;
         if (pallet.palletPrincipalId) {
@@ -273,7 +232,6 @@ class PalletService {
         }
         return 1 + (pallet.palletsVinculados?.length || 0);
     }
-
     obterIndiceNoGrupo(pallet) {
         if (pallet.tipo !== 'VOLUMETRIA_ALTA') return null;
         if (!pallet.palletPrincipalId) {
@@ -288,12 +246,10 @@ class PalletService {
         }
         return 1;
     }
-
     gerarQRCode(codigo) {
         if (!codigo) return null;
         return `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(codigo)}`;
     }
-
     getSubrotaDisplay(pallet) {
         if (pallet.subregiao && pallet.regiao) {
             return `${pallet.regiao}${pallet.subregiao}`;
@@ -303,13 +259,11 @@ class PalletService {
         }
         return pallet.subregiao || '';
     }
-
     gerarEtiquetaHTML(pallet, codigoLista = null) {
         const dataAtual = new Date();
         const dataHora = dataAtual.toLocaleString('pt-BR');
         const qrCodeUrl = codigoLista ? this.gerarQRCode(codigoLista) : null;
         const isDiversos = pallet.tipo === 'DIVERSOS';
-
         let volumesDisplay = '';
         if (isDiversos) {
             volumesDisplay = '______________';
@@ -318,7 +272,6 @@ class PalletService {
         } else {
             volumesDisplay = `${pallet.volumesAtuais || 0} / ${pallet.maxVolumes || ''}`;
         }
-
         let palletsDisplay = '';
         if (!isDiversos && pallet.tipo === 'VOLUMETRIA_ALTA') {
             const totalPallets = this.obterTotalPalletsGrupo(pallet);
@@ -327,9 +280,7 @@ class PalletService {
                 palletsDisplay = `${indiceAtual} / ${totalPallets}`;
             }
         }
-
         const subrotaDisplay = this.getSubrotaDisplay(pallet);
-
         return `
 <!DOCTYPE html>
 <html>
@@ -403,6 +354,12 @@ class PalletService {
     }
     .cidade-value {
         font-size: 13px;
+    }
+    .endereco-value {
+        font-size: 10px;
+        font-weight: normal;
+        margin-top: 2px;
+        color: #555;
     }
     .two-columns {
         display: flex;
@@ -593,21 +550,31 @@ class PalletService {
 </head>
 <body>
 <div class="page">
-
+    <div class="section-title">RESPONSÁVEL POR SEPARAR</div>
+    <div class="section-content">
+        <div class="linha-com-label">
+            <div class="embarcador-label">Responsável por separar:</div>
+            <div class="resp-linha"></div>
+        </div>
+    </div>
     <div class="section-title">SEPARAÇÃO</div>
     <div class="section-content">
         <div class="header-row">
             <div class="campo-container">Nº OS do Container: <span class="campo-linha"></span></div>
             <div class="campo-container">Data/Hora: ${dataHora}</div>
         </div>
-
         <div class="info-row">
             <div class="info-block"><div class="info-label">REGIÃO</div><div class="info-value">${pallet.regiao || ''}</div></div>
             <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:16px;">${subrotaDisplay}</div></div>
             <div class="info-block"><div class="info-label">CIDADE</div><div class="info-value cidade-value">${pallet.cidade || ''}</div></div>
             <div class="info-block"><div class="info-label">UF</div><div class="info-value">${pallet.estado || ''}</div></div>
         </div>
-
+        <div class="info-row">
+            <div class="info-block" style="grid-column: span 4;">
+                <div class="info-label">ENDEREÇO</div>
+                <div class="info-value endereco-value">${pallet.endereco || ''}</div>
+            </div>
+        </div>
         <div class="two-columns">
             <div class="left-col">
                 <div class="embarcador-item">
@@ -633,7 +600,6 @@ class PalletService {
                 ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:36mm;"></div>'}
             </div>
         </div>
-
         <div class="checkbox-row">
             <div style="display: flex; gap: 6mm; align-items: center;">
                 <span class="section-label">CONFERÊNCIA:</span>
@@ -646,7 +612,6 @@ class PalletService {
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Não</span></div>
             </div>
         </div>
-
         <div class="destinatario-row">
             <div style="display: flex; gap: 5mm; align-items: center;">
                 <span class="section-label">ÚNICO DESTINATÁRIO:</span>
@@ -655,13 +620,7 @@ class PalletService {
             </div>
             <div class="nf-text">Nº da NF: ${pallet.notaFiscal || ''}</div>
         </div>
-
-        <div class="linha-com-label">
-            <div class="embarcador-label">Responsável por separar:</div>
-            <div class="resp-linha"></div>
-        </div>
     </div>
-
     <div class="section-title">SERVIÇO</div>
     <div class="section-content">
         <div class="servico-item">
@@ -681,7 +640,6 @@ class PalletService {
             <div class="servico-check-group"><span class="checkbox"></span><span>Ponto de Encontro (quando não há necessidade de seguir outros trechos)</span></div>
         </div>
     </div>
-
     <div class="section-title">TRANSFERÊNCIA</div>
     <div class="section-content" style="padding: 1.5mm 2mm;">
         <table class="trechos-table">
@@ -708,7 +666,6 @@ class PalletService {
             `).join('')}
         </table>
     </div>
-
     <div class="section-title">LAST MILE</div>
     <div class="section-content" style="padding: 1.5mm 2mm;">
         <table class="trechos-table">
@@ -732,19 +689,16 @@ class PalletService {
             </tr>
         </table>
     </div>
-
     <div class="linha-com-label" style="margin-top: 4mm;">
         <div class="embarcador-label">Responsável Planejamento:</div>
         <div class="planejamento-linha"></div>
     </div>
 </div>
-
 <button class="no-print" onclick="window.print()">🖨️ IMPRIMIR</button>
 </body>
 </html>
         `;
     }
-
     imprimirEtiqueta(pallet, codigoLista = null) {
         const html = this.gerarEtiquetaHTML(pallet, codigoLista);
         const janela = window.open('', '_blank');

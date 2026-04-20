@@ -1,26 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
-
   if (typeof window.db === 'undefined') {
     mostrarErroFirebase();
     return;
   }
-
   window.palletService = new PalletService();
   window.agendamentoService = new AgendamentoService();
-
   window.palletService.setAgendamentoService(window.agendamentoService);
-
   configurarInterface();
   configurarTabs();
   configurarBotoes();
   configurarTema();
-
   renderizarPallets();
   renderizarDestinatarios();
   renderizarFinalizados();
-
   configurarMonitorConexao();
-
   function mostrarErroFirebase() {
     const main = document.querySelector('main');
     main.innerHTML = `
@@ -47,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
   }
-
   function configurarInterface() {
     const metaViewport = document.querySelector('meta[name=viewport]');
     if (metaViewport) {
@@ -59,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
-
   function configurarTema() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -75,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   }
-
   function configurarTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -93,13 +83,13 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
-
   function resetFormularioPallet() {
     const nf = document.getElementById('nf');
     const recebedor = document.getElementById('recebedor');
     const embarcador = document.getElementById('embarcador');
     const estado = document.getElementById('estado');
     const cidade = document.getElementById('cidade');
+    const endereco = document.getElementById('endereco');
     const regiao = document.getElementById('regiao');
     const subregiao = document.getElementById('subregiao');
     const maxVolumes = document.getElementById('maxVolumes');
@@ -107,13 +97,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const diversosSubregiao = document.getElementById('diversos-subregiao');
     const diversosEstado = document.getElementById('diversos-estado');
     const diversosEmbarcador = document.getElementById('diversos-embarcador');
+    const diversosEndereco = document.getElementById('diversos-endereco');
     const palletTipo = document.getElementById('pallet-tipo');
-
     if (nf) nf.value = '';
     if (recebedor) recebedor.value = '';
     if (embarcador) embarcador.value = '';
     if (estado) estado.value = '';
     if (cidade) cidade.value = '';
+    if (endereco) endereco.value = '';
     if (regiao) regiao.value = '';
     if (subregiao) subregiao.value = '';
     if (maxVolumes) maxVolumes.value = '';
@@ -121,18 +112,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (diversosSubregiao) diversosSubregiao.value = '';
     if (diversosEstado) diversosEstado.value = '';
     if (diversosEmbarcador) diversosEmbarcador.value = 'DIVERSOS';
+    if (diversosEndereco) diversosEndereco.value = 'DIVERSOS';
     if (palletTipo) palletTipo.value = 'VOLUMETRIA_ALTA';
-
     toggleCamposPorTipo();
   }
-
   function toggleCamposPorTipo() {
     const tipo = document.getElementById('pallet-tipo');
     if (!tipo) return;
-
     const volumetriaCampos = document.getElementById('volumetria-campos');
     const diversosCampos = document.getElementById('diversos-campos');
-
     if (tipo.value === 'VOLUMETRIA_ALTA') {
       if (volumetriaCampos) volumetriaCampos.style.display = 'block';
       if (diversosCampos) diversosCampos.style.display = 'none';
@@ -141,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (diversosCampos) diversosCampos.style.display = 'block';
     }
   }
-
   function atualizarDatalistDestinatarios() {
     const destinatarios = window.agendamentoService.listar();
     const datalist = document.getElementById('destinatarios-list-datalist');
@@ -154,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   }
-
   function configurarBotoes() {
     const createBtn = document.getElementById('create-pallet-btn');
     if (createBtn) {
@@ -165,12 +151,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.remove('hidden');
       });
     }
-
     const palletTipo = document.getElementById('pallet-tipo');
     if (palletTipo) {
       palletTipo.addEventListener('change', toggleCamposPorTipo);
     }
-
     const closeModal = document.getElementById('close-modal');
     if (closeModal) {
       closeModal.addEventListener('click', () => {
@@ -178,16 +162,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.add('hidden');
       });
     }
-
     const palletForm = document.getElementById('pallet-form');
     if (palletForm) {
       palletForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const tipoSelect = document.getElementById('pallet-tipo');
         const tipo = tipoSelect ? tipoSelect.value : 'VOLUMETRIA_ALTA';
         let dados;
-
         if (tipo === 'VOLUMETRIA_ALTA') {
           const nf = document.getElementById('nf');
           const recebedor = document.getElementById('recebedor');
@@ -196,8 +177,8 @@ document.addEventListener('DOMContentLoaded', function () {
           const subregiao = document.getElementById('subregiao');
           const estado = document.getElementById('estado');
           const cidade = document.getElementById('cidade');
+          const endereco = document.getElementById('endereco');
           const maxVolumes = document.getElementById('maxVolumes');
-
           dados = {
             notaFiscal: nf ? nf.value : '',
             recebedor: recebedor ? recebedor.value : '',
@@ -206,13 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
             subregiao: subregiao ? subregiao.value : '',
             estado: estado ? estado.value : '',
             cidade: cidade ? cidade.value : '',
+            endereco: endereco ? endereco.value : '',
             maxVolumes: maxVolumes ? maxVolumes.value : ''
           };
         } else {
           const diversosRegiao = document.getElementById('diversos-regiao');
           const diversosSubregiao = document.getElementById('diversos-subregiao');
           const diversosEstado = document.getElementById('diversos-estado');
-
           dados = {
             regiao: diversosRegiao ? diversosRegiao.value : '',
             subregiao: diversosSubregiao ? diversosSubregiao.value : '',
@@ -221,17 +202,16 @@ document.addEventListener('DOMContentLoaded', function () {
             notaFiscal: 'DIVERSOS',
             recebedor: 'DIVERSOS',
             cidade: 'DIVERSOS',
+            endereco: 'DIVERSOS',
             maxVolumes: null
           };
         }
-
         await window.palletService.create(dados, tipo);
         const modal = document.getElementById('pallet-modal');
         if (modal) modal.classList.add('hidden');
         renderizarPallets();
       });
     }
-
     const closeAjustar = document.getElementById('close-ajustar-modal');
     if (closeAjustar) {
       closeAjustar.addEventListener('click', () => {
@@ -239,22 +219,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.add('hidden');
       });
     }
-
     const searchNf = document.getElementById('search-nf');
     if (searchNf) {
       searchNf.addEventListener('input', debounce(renderizarPallets, 300));
     }
-
     const searchDestinatarios = document.getElementById('search-destinatarios');
     if (searchDestinatarios) {
       searchDestinatarios.addEventListener('input', debounce(renderizarDestinatarios, 300));
     }
-
     const searchFinalizados = document.getElementById('search-finalizados');
     if (searchFinalizados) {
       searchFinalizados.addEventListener('input', debounce(renderizarFinalizados, 300));
     }
-
     const clearHistory = document.getElementById('clear-history');
     if (clearHistory) {
       clearHistory.addEventListener('click', () => {
@@ -264,7 +240,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }
-
     const saveVolume = document.getElementById('save-volume');
     if (saveVolume) {
       saveVolume.addEventListener('click', async () => {
@@ -277,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function () {
         renderizarPallets();
       });
     }
-
     const finalizeFromAjustar = document.getElementById('finalize-from-ajustar');
     if (finalizeFromAjustar) {
       finalizeFromAjustar.addEventListener('click', async () => {
@@ -289,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (finalizarModal) finalizarModal.classList.remove('hidden');
       });
     }
-
     const deleteFromAjustar = document.getElementById('delete-from-ajustar');
     if (deleteFromAjustar) {
       deleteFromAjustar.addEventListener('click', async () => {
@@ -301,21 +274,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }
-
     const confirmFinalizarSim = document.getElementById('confirm-finalizar-sim');
     if (confirmFinalizarSim) {
       confirmFinalizarSim.addEventListener('click', async () => {
         await finalizarPalletComConfirmacao(window.palletAtual, true);
       });
     }
-
     const confirmFinalizarNao = document.getElementById('confirm-finalizar-nao');
     if (confirmFinalizarNao) {
       confirmFinalizarNao.addEventListener('click', async () => {
         await finalizarPalletComConfirmacao(window.palletAtual, false);
       });
     }
-
     const cancelFinalizar = document.getElementById('cancel-finalizar');
     if (cancelFinalizar) {
       cancelFinalizar.addEventListener('click', () => {
@@ -323,7 +293,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.add('hidden');
       });
     }
-
     const confirmarImprimir = document.getElementById('confirmar-imprimir-codigo');
     if (confirmarImprimir) {
       confirmarImprimir.addEventListener('click', async () => {
@@ -337,7 +306,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.add('hidden');
       });
     }
-
     const imprimirSemCodigo = document.getElementById('imprimir-sem-codigo');
     if (imprimirSemCodigo) {
       imprimirSemCodigo.addEventListener('click', () => {
@@ -349,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modal) modal.classList.add('hidden');
       });
     }
-
     const cancelarCodigo = document.getElementById('cancelar-codigo-modal');
     if (cancelarCodigo) {
       cancelarCodigo.addEventListener('click', () => {
@@ -358,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   }
-
   async function finalizarPalletComConfirmacao(id, bipado) {
     await window.palletService.finalizar(id, bipado);
     const modal = document.getElementById('finalizar-modal');
@@ -366,7 +332,6 @@ document.addEventListener('DOMContentLoaded', function () {
     renderizarPallets();
     renderizarFinalizados();
   }
-
   function configurarMonitorConexao() {
     window.addEventListener('online', () => {
       const banner = document.getElementById('offline-banner');
@@ -377,7 +342,6 @@ document.addEventListener('DOMContentLoaded', function () {
       if (banner) banner.classList.remove('hidden');
     });
   }
-
   window.abrirModalAjustar = function (id) {
     const p = window.palletService.pallets.get(id);
     if (!p) return;
@@ -386,9 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const infoDiv = document.getElementById('ajustar-info');
     const volumeControls = document.getElementById('volume-controls-container');
     const saveButton = document.getElementById('save-volume');
-
     if (modalTitle) modalTitle.innerText = `Ajustar Pallet - ${p.notaFiscal || 'DIVERSOS'}`;
-
     let volumesDisplay = '';
     if (p.tipo === 'DIVERSOS') {
       volumesDisplay = '______________';
@@ -397,9 +359,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       volumesDisplay = `${p.volumesAtuais || 0} / ${p.maxVolumes || '?'}`;
     }
-
     const subrotaDisplay = window.palletService.getSubrotaDisplay(p);
-
     if (infoDiv) {
       infoDiv.innerHTML = `
         <div>
@@ -408,13 +368,13 @@ document.addEventListener('DOMContentLoaded', function () {
           <strong>Embarcador:</strong> ${p.embarcador || 'DIVERSOS'}<br>
           <strong>UF:</strong> ${p.estado}<br>
           <strong>Cidade:</strong> ${p.cidade || 'DIVERSOS'}<br>
+          <strong>Endereço:</strong> ${p.endereco || 'DIVERSOS'}<br>
           <strong>Região:</strong> ${p.regiao || 'N/A'}<br>
           <strong>Sub-região:</strong> ${subrotaDisplay}<br>
           <strong>Volumes:</strong> ${volumesDisplay}
         </div>
       `;
     }
-
     if (volumeControls) {
       if (p.tipo === 'VOLUMETRIA_ALTA' && !p.volumesDiversos) {
         volumeControls.innerHTML = `
@@ -427,7 +387,6 @@ document.addEventListener('DOMContentLoaded', function () {
           <button class="btn-volume" data-value="10">+10</button>
         `;
         if (saveButton) saveButton.style.display = 'block';
-
         volumeControls.querySelectorAll('.btn-volume').forEach(btn => {
           btn.addEventListener('click', (e) => {
             const valor = parseInt(e.target.dataset.value);
@@ -441,17 +400,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (saveButton) saveButton.style.display = 'none';
       }
     }
-
     const modal = document.getElementById('ajustar-modal');
     if (modal) modal.classList.remove('hidden');
   };
-
   window.finalizarPallet = function (id) {
     window.palletAtual = id;
     const modal = document.getElementById('finalizar-modal');
     if (modal) modal.classList.remove('hidden');
   };
-
   window.anexarPallet = async function (id) {
     const palletPrincipal = window.palletService.pallets.get(id);
     if (!palletPrincipal || palletPrincipal.tipo !== 'VOLUMETRIA_ALTA') {
@@ -466,7 +422,6 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Erro ao criar pallet anexado.');
     }
   };
-
   window.imprimirPallet = function (id) {
     const pallet = window.palletService.pallets.get(id);
     if (!pallet) return;
@@ -474,14 +429,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('codigo-lista-modal');
     if (modal) modal.classList.remove('hidden');
   };
-
   window.excluirPallet = async function (id) {
     if (confirm('⚠️ Tem certeza que deseja excluir este pallet?')) {
       await window.palletService.excluir(id);
       renderizarPallets();
     }
   };
-
   window.reimprimirEtiqueta = function (id) {
     const pallet = window.palletService.finalizados.get(id);
     if (!pallet) return;
@@ -489,27 +442,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('codigo-lista-modal');
     if (modal) modal.classList.remove('hidden');
   };
-
   function renderizarPallets() {
     const buscaInput = document.getElementById('search-nf');
     const busca = buscaInput ? buscaInput.value : '';
     const pallets = window.palletService.listar(busca);
     const lista = document.getElementById('pallets-list');
-
     if (!lista) return;
-
     if (pallets.length === 0) {
       lista.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);">📦 Nenhum pallet ativo</div>';
       return;
     }
-
     let html = '';
     const palletsPrincipais = pallets.filter(p => !p.palletPrincipalId);
-
     for (const p of palletsPrincipais) {
       const anexos = pallets.filter(a => a.palletPrincipalId === p.id);
       const isDiversos = p.tipo === 'DIVERSOS';
-
       let volumesDisplay = '';
       if (isDiversos) {
         volumesDisplay = '______________';
@@ -518,27 +465,23 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         volumesDisplay = `${p.volumesAtuais || 0} / ${p.maxVolumes || '?'}`;
       }
-
       const subrotaDisplay = window.palletService.getSubrotaDisplay(p);
-
       html += `
         <div class="pallet-card" style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <span class="nf-tag">${isDiversos ? 'DIVERSOS' : `NF ${p.notaFiscal}`}</span>
           </div>
-
           <div class="info-grid">
             <div class="info-item"><small>Destinatário</small><strong>${p.recebedor || 'DIVERSOS'}</strong></div>
             <div class="info-item"><small>Embarcador</small><strong>${p.embarcador || 'DIVERSOS'}</strong></div>
             <div class="info-item"><small>UF</small><strong>${p.estado || ''}</strong></div>
             <div class="info-item"><small>Cidade</small><strong>${p.cidade || 'N/A'}</strong></div>
+            <div class="info-item"><small>Endereço</small><strong>${p.endereco || 'N/A'}</strong></div>
             <div class="info-item"><small>Região</small><strong>${p.regiao || 'N/A'}</strong></div>
             <div class="info-item"><small>Sub-região</small><strong>${subrotaDisplay || 'N/A'}</strong></div>
             <div class="info-item"><small>Volumes</small><strong>${volumesDisplay}</strong></div>
           </div>
-
           ${!isDiversos && !p.volumesDiversos && p.volumesAtuais >= p.maxVolumes ? '<div class="completo-alert">✅ PALLET COMPLETO</div>' : ''}
-
           <div class="card-actions">
             <button onclick="abrirModalAjustar('${p.id}')">Ajustar</button>
             <button onclick="finalizarPallet('${p.id}')">Finalizar</button>
@@ -548,11 +491,9 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
         </div>
       `;
-
       if (anexos.length > 0) {
         html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px dashed var(--border);">`;
         html += `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">📎 Pallets anexados (${1 + anexos.length} pallets no total):</div>`;
-
         for (const anexo of anexos) {
           const volumesAnexo = `${anexo.volumesAtuais} / ${anexo.maxVolumes}`;
           const subrotaAnexo = window.palletService.getSubrotaDisplay(anexo);
@@ -564,6 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
               <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div class="info-item"><small>Destinatário</small><strong>${anexo.recebedor}</strong></div>
                 <div class="info-item"><small>Embarcador</small><strong>${anexo.embarcador || 'DIVERSOS'}</strong></div>
+                <div class="info-item"><small>Endereço</small><strong>${anexo.endereco || 'N/A'}</strong></div>
                 <div class="info-item"><small>Sub-região</small><strong>${subrotaAnexo}</strong></div>
                 <div class="info-item"><small>Volumes</small><strong>${volumesAnexo}</strong></div>
               </div>
@@ -579,28 +521,21 @@ document.addEventListener('DOMContentLoaded', function () {
         html += `</div>`;
       }
     }
-
     lista.innerHTML = html;
   }
-
   function renderizarDestinatarios() {
     const buscaInput = document.getElementById('search-destinatarios');
     const busca = buscaInput ? buscaInput.value.toLowerCase() : '';
     let destinatarios = window.agendamentoService.listar();
-
     if (busca) {
       destinatarios = destinatarios.filter(d => (d.destinatario || '').toLowerCase().includes(busca));
     }
-
     const lista = document.getElementById('destinatarios-list');
-
     if (!lista) return;
-
     if (destinatarios.length === 0) {
       lista.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">📋 Nenhum destinatário encontrado</div>';
       return;
     }
-
     let html = '';
     destinatarios.forEach(d => {
       html += `
@@ -615,26 +550,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     lista.innerHTML = html;
   }
-
   function renderizarFinalizados() {
     const buscaInput = document.getElementById('search-finalizados');
     const busca = buscaInput ? buscaInput.value : '';
     const finalizados = window.palletService.listarFinalizados(busca);
     const lista = document.getElementById('finalizados-list');
-
     if (!lista) return;
-
     if (finalizados.length === 0) {
       lista.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);">📦 Nenhum pallet finalizado</div>';
       return;
     }
-
     let html = '';
     finalizados.forEach(p => {
       const dataFinalizacao = new Date(p.finalizadoEm).toLocaleDateString('pt-BR');
       const isDiversos = p.tipo === 'DIVERSOS';
       let volumesDisplay = '';
-
       if (isDiversos) {
         volumesDisplay = '______________';
       } else if (p.volumesDiversos) {
@@ -642,9 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         volumesDisplay = `${p.volumesAtuais}/${p.maxVolumes}`;
       }
-
       const subrotaDisplay = window.palletService.getSubrotaDisplay(p);
-
       html += `
         <div class="finalizado-card">
           <div class="finalizado-header">
@@ -653,18 +581,17 @@ document.addEventListener('DOMContentLoaded', function () {
               ${p.bipado ? '✅ BIPADO' : '⚠️ NÃO BIPADO'}
             </span>
           </div>
-
           <div class="finalizado-info">
             <div><small>Destinatário</small><br>${p.recebedor || 'DIVERSOS'}</div>
             <div><small>Embarcador</small><br>${p.embarcador || 'DIVERSOS'}</div>
             <div><small>UF</small><br>${p.estado}</div>
             <div><small>Cidade</small><br>${p.cidade || 'N/A'}</div>
+            <div><small>Endereço</small><br>${p.endereco || 'N/A'}</div>
             <div><small>Região</small><br>${p.regiao || 'N/A'}</div>
             <div><small>Sub-região</small><br>${subrotaDisplay}</div>
             <div><small>Volumes</small><br>${volumesDisplay}</div>
             <div><small>Finalizado</small><br>${dataFinalizacao}</div>
           </div>
-
           <div style="margin-top: 15px;">
             <button onclick="reimprimirEtiqueta('${p.id}')" style="width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer;">
               🖨️ Reimprimir
@@ -675,7 +602,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     lista.innerHTML = html;
   }
-
   function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {

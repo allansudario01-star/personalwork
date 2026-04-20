@@ -14,7 +14,6 @@
 
 <body>
     <div id="offline-banner" class="offline hidden">⚠️ Modo offline</div>
-
     <header>
         <div class="header-top">
             <h1>📦 Pallet System</h1>
@@ -26,18 +25,14 @@
             <button class="tab-btn" data-tab="finalizados">FINALIZADOS</button>
         </div>
     </header>
-
     <main>
         <section id="pallets-tab" class="tab-content active">
             <div class="filters">
                 <input type="text" id="search-nf" placeholder="🔍 Buscar Número Fiscal">
             </div>
-
             <button id="create-pallet-btn" class="btn-primary">+ NOVO PALLET</button>
-
             <div id="pallets-list"></div>
         </section>
-
         <section id="destinatarios-tab" class="tab-content">
             <h2>Destinatários</h2>
             <div class="filters">
@@ -45,7 +40,6 @@
             </div>
             <div id="destinatarios-list"></div>
         </section>
-
         <section id="finalizados-tab" class="tab-content">
             <h2>Pallets Finalizados</h2>
             <div class="filters">
@@ -55,7 +49,6 @@
             <div id="finalizados-list"></div>
         </section>
     </main>
-
     <div id="pallet-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Novo Pallet</h3>
@@ -67,7 +60,6 @@
                         <option value="DIVERSOS">📦 Diversos</option>
                     </select>
                 </div>
-
                 <div id="volumetria-campos">
                     <input type="text" id="nf" placeholder="Número Fiscal" autocomplete="off">
                     <input type="text" id="recebedor" placeholder="Destinatário" autocomplete="off"
@@ -76,11 +68,11 @@
                     <input type="text" id="embarcador" placeholder="Embarcador" autocomplete="off">
                     <input type="text" id="estado" placeholder="UF" maxlength="2" autocomplete="off">
                     <input type="text" id="cidade" placeholder="Cidade" autocomplete="off">
+                    <input type="text" id="endereco" placeholder="Endereço" autocomplete="off">
                     <input type="text" id="regiao" placeholder="Região / Unidade" autocomplete="off">
                     <input type="text" id="subregiao" placeholder="Sub-região (número)" autocomplete="off">
                     <input type="number" id="maxVolumes" placeholder="Volumes Totais" min="1" autocomplete="off">
                 </div>
-
                 <div id="diversos-campos" style="display: none;">
                     <input type="text" id="diversos-regiao" placeholder="Região / Unidade" autocomplete="off">
                     <input type="text" id="diversos-subregiao" placeholder="Sub-região (número ou texto)"
@@ -88,8 +80,9 @@
                     <input type="text" id="diversos-estado" placeholder="UF" maxlength="2" autocomplete="off">
                     <input type="text" id="diversos-embarcador" placeholder="Embarcador" value="DIVERSOS" readonly
                         autocomplete="off">
+                    <input type="text" id="diversos-endereco" placeholder="Endereço" value="DIVERSOS" readonly
+                        autocomplete="off">
                 </div>
-
                 <div class="form-actions">
                     <button type="submit">Criar Pallet</button>
                     <button type="button" id="close-modal">Cancelar</button>
@@ -97,15 +90,11 @@
             </form>
         </div>
     </div>
-
     <div id="ajustar-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="ajustar-modal-title">Ajustar Pallet</h3>
             <div id="ajustar-info"></div>
-
-            <div id="volume-controls-container" class="volume-controls">
-            </div>
-
+            <div id="volume-controls-container" class="volume-controls"></div>
             <div class="volume-actions">
                 <button id="save-volume" class="btn-primary" style="display: none;">Salvar Volumes</button>
                 <button id="finalize-from-ajustar" class="btn-warning">Finalizar Pallet</button>
@@ -114,7 +103,6 @@
             </div>
         </div>
     </div>
-
     <div id="finalizar-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Finalizar Pallet</h3>
@@ -126,7 +114,6 @@
             </div>
         </div>
     </div>
-
     <div id="codigo-lista-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Código da Lista de QR Codes</h3>
@@ -140,7 +127,6 @@
             </div>
         </div>
     </div>
-
     <script src="firebase-config.js"></script>
     <script src="palletService.js"></script>
     <script src="agendamentoService.js"></script>

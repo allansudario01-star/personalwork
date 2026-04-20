@@ -290,7 +290,7 @@ class PalletService {
 <style>
     @page {
         size: A4;
-        margin: 6mm 10mm;
+        margin: 5mm 8mm;
     }
     * {
         margin: 0;
@@ -300,71 +300,71 @@ class PalletService {
     body {
         font-family: 'Helvetica', 'Arial', sans-serif;
         background: white;
-        font-size: 10px;
+        font-size: 9px;
     }
     .page {
         width: 100%;
     }
     .section-title {
         background: #e0e0e0;
-        padding: 1.5mm 4mm;
+        padding: 1mm 3mm;
         font-weight: bold;
-        font-size: 11px;
+        font-size: 9px;
         border: 1px solid #aaa;
-        margin-top: 3mm;
+        margin-top: 2mm;
     }
     .section-content {
         border: 1px solid #aaa;
         border-top: none;
-        padding: 3mm 4mm;
+        padding: 2mm 3mm;
     }
     .header-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 4mm;
+        margin-bottom: 2mm;
     }
     .campo-container {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: bold;
     }
     .campo-linha {
         border-bottom: 1px solid #000;
-        min-width: 55mm;
+        min-width: 45mm;
         display: inline-block;
-        margin-left: 3px;
+        margin-left: 2px;
     }
     .info-row {
         display: flex;
-        gap: 5mm;
-        margin-bottom: 4mm;
+        gap: 3mm;
+        margin-bottom: 2mm;
         justify-content: space-between;
     }
     .info-block {
         flex: 1;
     }
     .info-label {
-        font-size: 8px;
+        font-size: 7px;
         font-weight: bold;
-        margin-bottom: 1mm;
+        margin-bottom: 0.5mm;
         color: #333;
     }
     .info-value {
-        font-size: 18px;
+        font-size: 13px;
         font-weight: bold;
     }
     .cidade-value {
-        font-size: 13px;
+        font-size: 10px;
     }
     .endereco-value {
-        font-size: 10px;
+        font-size: 8px;
         font-weight: normal;
-        margin-top: 2px;
+        margin-top: 1px;
         color: #555;
     }
     .two-columns {
         display: flex;
-        gap: 5mm;
-        margin-bottom: 3mm;
+        gap: 3mm;
+        margin-bottom: 2mm;
     }
     .left-col {
         flex: 2;
@@ -376,8 +376,8 @@ class PalletService {
         align-items: flex-start;
     }
     .qrcode-box {
-        width: 36mm;
-        height: 36mm;
+        width: 28mm;
+        height: 28mm;
         border: 1px solid #aaa;
         display: flex;
         align-items: center;
@@ -392,139 +392,136 @@ class PalletService {
     .embarcador-item {
         display: flex;
         align-items: baseline;
-        margin-bottom: 3mm;
+        margin-bottom: 2mm;
     }
     .embarcador-label {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: bold;
-        width: 22mm;
+        width: 20mm;
     }
     .recebedor-text {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
-        margin-left: 3mm;
+        margin-left: 2mm;
     }
     .volumes-row {
         display: flex;
-        gap: 10mm;
-        margin-bottom: 3mm;
+        gap: 5mm;
+        margin-bottom: 2mm;
     }
     .volume-card, .pallet-card {
         flex: 1;
         border: 1.5px solid #000;
-        border-radius: 5px;
-        padding: 2mm 3mm;
+        border-radius: 4px;
+        padding: 1.5mm 2mm;
         text-align: center;
     }
     .volume-label, .pallet-label {
-        font-size: 8px;
+        font-size: 7px;
         font-weight: bold;
-        margin-bottom: 1mm;
+        margin-bottom: 0.5mm;
     }
     .volume-number, .pallet-number {
-        font-size: 18px;
+        font-size: 14px;
         font-weight: bold;
     }
     .checkbox-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 3mm;
+        margin-bottom: 2mm;
         flex-wrap: wrap;
     }
     .checkbox-group {
         display: inline-flex;
         align-items: center;
-        gap: 2mm;
+        gap: 1.5mm;
     }
     .checkbox {
-        width: 3.5mm;
-        height: 3.5mm;
+        width: 3mm;
+        height: 3mm;
         border: 1px solid #000;
         display: inline-block;
         background: white;
     }
     .checkbox-label {
-        font-size: 9px;
+        font-size: 8px;
     }
     .section-label {
         font-weight: bold;
-        font-size: 9px;
-    }
-    .full-width {
-        width: 100%;
+        font-size: 8px;
     }
     .resp-linha, .planejamento-linha {
         border-bottom: 1px solid #000;
         flex: 1;
-        margin-left: 5mm;
-        height: 5mm;
+        margin-left: 3mm;
+        height: 4mm;
     }
     .destinatario-row {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        margin-bottom: 3mm;
+        margin-bottom: 2mm;
         flex-wrap: wrap;
     }
     .nf-text {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
     }
     .linha-com-label {
         display: flex;
         align-items: baseline;
-        margin-top: 3mm;
+        margin-top: 2mm;
     }
     .servico-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2.5mm;
+        margin-bottom: 1.5mm;
         flex-wrap: wrap;
     }
     .servico-check-group {
         display: flex;
-        gap: 2mm;
+        gap: 1.5mm;
         align-items: center;
         flex: 2;
     }
     .servico-data {
-        font-size: 9px;
+        font-size: 8px;
         display: flex;
         align-items: center;
-        gap: 2mm;
+        gap: 1.5mm;
     }
     .servico-linha {
         border-bottom: 1px solid #000;
-        width: 30mm;
-        height: 4mm;
+        width: 25mm;
+        height: 3.5mm;
     }
     .trechos-table {
         width: 100%;
         border-collapse: collapse;
     }
     .trechos-table td {
-        padding: 0.8mm 1.5mm;
+        padding: 0.5mm 1mm;
         vertical-align: top;
-        font-size: 9px;
+        font-size: 8px;
     }
     .trecho-titulo {
         font-weight: bold;
-        width: 12%;
-        font-size: 9px;
+        width: 10%;
+        font-size: 8px;
     }
     .campo-trecho {
         border-bottom: 1px solid #000;
-        min-width: 22mm;
-        height: 4mm;
+        min-width: 18mm;
+        height: 3.5mm;
         display: inline-block;
     }
     .campo-trecho-peq {
-        min-width: 14mm;
+        min-width: 12mm;
     }
     .trecho-label {
-        font-size: 9px;
+        font-size: 8px;
         font-weight: normal;
     }
     .no-print {
@@ -556,13 +553,13 @@ class PalletService {
             <div class="embarcador-label">Responsável por separar:</div>
             <div class="resp-linha"></div>
         </div>
-        <div class="header-row" style="margin-top: 4mm;">
+        <div class="header-row" style="margin-top: 2mm;">
             <div class="campo-container">Nº OS do Container: <span class="campo-linha"></span></div>
             <div class="campo-container">Data/Hora: ${dataHora}</div>
         </div>
         <div class="info-row">
             <div class="info-block"><div class="info-label">REGIÃO</div><div class="info-value">${pallet.regiao || ''}</div></div>
-            <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:16px;">${subrotaDisplay}</div></div>
+            <div class="info-block"><div class="info-label">SUB-REGIÃO</div><div class="info-value" style="font-size:12px;">${subrotaDisplay}</div></div>
             <div class="info-block"><div class="info-label">CIDADE</div><div class="info-value cidade-value">${pallet.cidade || ''}</div></div>
             <div class="info-block"><div class="info-label">UF</div><div class="info-value">${pallet.estado || ''}</div></div>
         </div>
@@ -594,23 +591,23 @@ class PalletService {
                 </div>
             </div>
             <div class="right-col">
-                ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:36mm;"></div>'}
+                ${qrCodeUrl ? `<div class="qrcode-box"><img src="${qrCodeUrl}" /></div>` : '<div style="width:28mm;"></div>'}
             </div>
         </div>
         <div class="checkbox-row">
-            <div style="display: flex; gap: 6mm; align-items: center;">
+            <div style="display: flex; gap: 4mm; align-items: center;">
                 <span class="section-label">CONFERÊNCIA:</span>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Completo</span></div>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Parcial</span></div>
             </div>
-            <div style="display: flex; gap: 6mm; align-items: center;">
+            <div style="display: flex; gap: 4mm; align-items: center;">
                 <span class="section-label">CONTÉM PERECÍVEIS:</span>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Sim</span></div>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Não</span></div>
             </div>
         </div>
         <div class="destinatario-row">
-            <div style="display: flex; gap: 5mm; align-items: center;">
+            <div style="display: flex; gap: 4mm; align-items: center;">
                 <span class="section-label">ÚNICO DESTINATÁRIO:</span>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Sim</span></div>
                 <div class="checkbox-group"><span class="checkbox"></span><span class="checkbox-label">Não</span></div>
@@ -638,7 +635,7 @@ class PalletService {
         </div>
     </div>
     <div class="section-title">TRANSFERÊNCIA</div>
-    <div class="section-content" style="padding: 1.5mm 2mm;">
+    <div class="section-content" style="padding: 1mm 2mm;">
         <table class="trechos-table">
             ${[1, 2, 3].map(i => `
                 <tr>
@@ -646,47 +643,47 @@ class PalletService {
                     <td><span class="trecho-label">Data/Hora:</span> <span class="campo-trecho"></span></td>
                     <td><span class="trecho-label">Nº Viagem:</span> <span class="campo-trecho"></span></td>
                     <td><span class="trecho-label">Doca:</span> <span class="campo-trecho campo-trecho-peq"></span></td>
-                </tr>
+                 </tr>
                 <tr>
                     <td class="trecho-titulo"></td>
-                    <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
-                </tr>
+                    <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 25mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 25mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+                 </tr>
                 <tr>
                     <td class="trecho-titulo"></td>
                     <td colspan="3"><span class="trecho-label">Atividade:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Chegada:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Partida:</span> <span class="campo-trecho"></span></td>
-                </tr>
+                 </tr>
                 <tr>
                     <td class="trecho-titulo"></td>
                     <td colspan="3"><span class="trecho-label">Motorista:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Placa:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Tipo Veículo:</span> <span class="campo-trecho"></span></td>
-                </tr>
-                ${i < 3 ? '<tr><td colspan="4" style="padding: 0;"><hr style="margin: 0.5mm 0;" /></td></tr>' : ''}
+                 </tr>
+                ${i < 3 ? '<tr><td colspan="4" style="padding: 0;"><hr style="margin: 0.3mm 0;" /></td></tr>' : ''}
             `).join('')}
         </table>
     </div>
     <div class="section-title">LAST MILE</div>
-    <div class="section-content" style="padding: 1.5mm 2mm;">
+    <div class="section-content" style="padding: 1mm 2mm;">
         <table class="trechos-table">
             <tr>
                 <td class="trecho-titulo">Trecho 04</td>
                 <td><span class="trecho-label">Data/Hora:</span> <span class="campo-trecho"></span></td>
                 <td><span class="trecho-label">Nº Viagem:</span> <span class="campo-trecho"></span></td>
                 <td><span class="trecho-label">Doca:</span> <span class="campo-trecho campo-trecho-peq"></span></td>
-            </tr>
+             </tr>
             <tr>
                 <td class="trecho-titulo"></td>
-                <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 30mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
-            </tr>
+                <td colspan="3"><span class="trecho-label">Origem:</span> <span class="campo-trecho" style="min-width: 25mm;"></span> &nbsp; <span class="trecho-label">Destino:</span> <span class="campo-trecho" style="min-width: 25mm;"></span> &nbsp; <span class="trecho-label">Linha:</span> <span class="campo-trecho"></span></td>
+             </tr>
             <tr>
                 <td class="trecho-titulo"></td>
                 <td colspan="3"><span class="trecho-label">Atividade:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Chegada:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Hora Partida:</span> <span class="campo-trecho"></span></td>
-            </tr>
+             </tr>
             <tr>
                 <td class="trecho-titulo"></td>
                 <td colspan="3"><span class="trecho-label">Motorista:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Placa:</span> <span class="campo-trecho"></span> &nbsp; <span class="trecho-label">Tipo Veículo:</span> <span class="campo-trecho"></span></td>
-            </tr>
+             </tr>
         </table>
     </div>
-    <div class="linha-com-label" style="margin-top: 4mm;">
+    <div class="linha-com-label" style="margin-top: 2mm;">
         <div class="embarcador-label">Responsável Planejamento:</div>
         <div class="planejamento-linha"></div>
     </div>
